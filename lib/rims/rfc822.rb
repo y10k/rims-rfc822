@@ -336,10 +336,14 @@ module RIMS
         @content_type[1]
       end
 
+      alias media_subtype media_sub_type
+
       def media_sub_type_upcase
         setup_content_type
         to_upper(@content_type[1])
       end
+
+      alias media_subtype_upcase media_sub_type_upcase
 
       def content_type
         "#{media_main_type}/#{media_sub_type}"
