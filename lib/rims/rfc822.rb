@@ -8,7 +8,7 @@ module RIMS
     def split_message(msg_txt)
       header_txt, body_txt = msg_txt.lstrip.split(/\r?\n\r?\n/, 2)
       header_txt << $& if $&
-      [ header_txt, body_txt ]
+      [ header_txt.freeze, body_txt.freeze ].freeze
     end
     module_function :split_message
 
