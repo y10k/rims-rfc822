@@ -127,6 +127,14 @@ module RIMS
     end
     module_function :unquote_phrase
 
+    Address = Struct.new(:display_name, :route, :local_part, :domain)
+    class Address
+      # compatible for Net::MAP::Address
+      alias name display_name
+      alias mailbox local_part
+      alias host domain
+    end
+
     def parse_mail_address_list(address_list_txt)
       addr_list = []
       src_txt = address_list_txt.dup
@@ -142,9 +150,9 @@ module RIMS
         then
           display_name = $~[:display_name]
           group_list = $~[:group_list]
-          addr_list << [ nil, nil, unquote_phrase(display_name), nil ].freeze
+          addr_list << Address.new( nil, nil, unquote_phrase(display_name), nil).freeze
           addr_list.concat(parse_mail_address_list(group_list))
-          addr_list << [ nil, nil, nil, nil ].freeze
+          addr_list << Address.new(nil, nil, nil, nil).freeze
         elsif (src_txt.sub!(%r{
                  \A
                  \s*
@@ -153,7 +161,7 @@ module RIMS
                  ,?
                }x, ''))
         then
-          addr_list << [ nil, nil, $~[:local_part].freeze, $~[:domain].freeze ].freeze
+          addr_list << Address.new(nil, nil, $~[:local_part].freeze, $~[:domain].freeze).freeze
         elsif (src_txt.sub!(%r{
                  \A
                  \s*
@@ -178,7 +186,7 @@ module RIMS
           route = $~[:route]
           local_part = $~[:local_part]
           domain = $~[:domain]
-          addr_list << [ unquote_phrase(display_name), route.freeze, local_part.freeze, domain.freeze ].freeze
+          addr_list << Address.new(unquote_phrase(display_name), route.freeze, local_part.freeze, domain.freeze).freeze
         else
           break
         end

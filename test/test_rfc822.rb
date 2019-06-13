@@ -291,29 +291,29 @@ baz
     end
 
     def test_parse_mail_address_list_addr_spec
-      assert_equal([], RIMS::RFC822.parse_mail_address_list(''.b))
+      assert_equal([], RIMS::RFC822.parse_mail_address_list(''.b).map(&:to_a))
       assert_equal([ [ nil, nil, 'toki', 'freedom.ne.jp' ] ],
-                   RIMS::RFC822.parse_mail_address_list('toki@freedom.ne.jp'.b))
+                   RIMS::RFC822.parse_mail_address_list('toki@freedom.ne.jp'.b).map(&:to_a))
       assert_equal([ [ nil, nil, 'toki', 'freedom.ne.jp' ] ],
-                   RIMS::RFC822.parse_mail_address_list(' toki@freedom.ne.jp '.b))
+                   RIMS::RFC822.parse_mail_address_list(' toki@freedom.ne.jp '.b).map(&:to_a))
     end
 
     def test_parse_mail_address_list_name_addr
       assert_equal([ [ 'TOKI Yoshinori', nil, 'toki', 'freedom.ne.jp' ] ],
-                   RIMS::RFC822.parse_mail_address_list('TOKI Yoshinori <toki@freedom.ne.jp>'.b))
+                   RIMS::RFC822.parse_mail_address_list('TOKI Yoshinori <toki@freedom.ne.jp>'.b).map(&:to_a))
       assert_equal([ [ 'TOKI Yoshinori', nil, 'toki', 'freedom.ne.jp' ] ],
-                   RIMS::RFC822.parse_mail_address_list('"TOKI Yoshinori" <toki@freedom.ne.jp>'.b))
+                   RIMS::RFC822.parse_mail_address_list('"TOKI Yoshinori" <toki@freedom.ne.jp>'.b).map(&:to_a))
       assert_equal([ [ 'TOKI Yoshinori', nil, 'toki', 'freedom.ne.jp' ] ],
-                   RIMS::RFC822.parse_mail_address_list('TOKI(土岐) Yoshinori <toki@freedom.ne.jp>'.b))
+                   RIMS::RFC822.parse_mail_address_list('TOKI(土岐) Yoshinori <toki@freedom.ne.jp>'.b).map(&:to_a))
       assert_equal([ [ 'TOKI,Yoshinori', nil, 'toki', 'freedom.ne.jp' ] ],
-                   RIMS::RFC822.parse_mail_address_list('TOKI\,Yoshinori <toki@freedom.ne.jp>'.b))
+                   RIMS::RFC822.parse_mail_address_list('TOKI\,Yoshinori <toki@freedom.ne.jp>'.b).map(&:to_a))
       assert_equal([ [ 'toki@freedom.ne.jp', nil, 'toki', 'freedom.ne.jp' ] ],
-                   RIMS::RFC822.parse_mail_address_list('"toki@freedom.ne.jp" <toki@freedom.ne.jp>'.b))
+                   RIMS::RFC822.parse_mail_address_list('"toki@freedom.ne.jp" <toki@freedom.ne.jp>'.b).map(&:to_a))
     end
 
     def test_parse_mail_address_list_route_addr
       assert_equal([ [ 'TOKI Yoshinori', '@mail.freedom.ne.jp,@smtp.gmail.com', 'toki', 'freedom.ne.jp' ] ],
-                   RIMS::RFC822.parse_mail_address_list('TOKI Yoshinori <@mail.freedom.ne.jp,@smtp.gmail.com:toki@freedom.ne.jp>'.b))
+                   RIMS::RFC822.parse_mail_address_list('TOKI Yoshinori <@mail.freedom.ne.jp,@smtp.gmail.com:toki@freedom.ne.jp>'.b).map(&:to_a))
     end
 
     def test_parse_mail_address_list_group
@@ -327,7 +327,7 @@ baz
                                                         'toki@freedom.ne.jp, ' +
                                                         'TOKI Yoshinori <toki@freedom.ne.jp>, ' +
                                                         'TOKI Yoshinori <@mail.freedom.ne.jp,@smtp.gmail.com:toki@freedom.ne.jp>' +
-                                                        ';'.b))
+                                                        ';'.b).map(&:to_a))
     end
 
     def test_parse_mail_address_list_multiline
@@ -337,7 +337,7 @@ baz
                    ],
                    RIMS::RFC822.parse_mail_address_list("toki@freedom.ne.jp,\n" +
                                                         "  TOKI Yoshinori <toki@freedom.ne.jp>\n" +
-                                                        "  , Yoshinori Toki <toki@freedom.ne.jp>  "))
+                                                        "  , Yoshinori Toki <toki@freedom.ne.jp>  ").map(&:to_a))
     end
   end
 
@@ -663,12 +663,12 @@ Content-Type: application/octet-stream
                     'Cc' => 'Bob <bob@mail.example.com>',
                     'Bcc' => 'Kate <kate@mail.example.com>')
 
-      assert_equal([ [ 'Foo', nil, 'foo', 'mail.example.com' ] ], @msg.from)
-      assert_equal([ [ 'Bar', nil, 'bar', 'mail.example.com' ] ], @msg.sender)
-      assert_equal([ [ 'Baz', nil, 'baz', 'mail.example.com' ] ], @msg.reply_to)
-      assert_equal([ [ 'Alice', nil, 'alice', 'mail.example.com' ] ], @msg.to)
-      assert_equal([ [ 'Bob', nil, 'bob', 'mail.example.com' ] ], @msg.cc)
-      assert_equal([ [ 'Kate', nil, 'kate', 'mail.example.com' ] ], @msg.bcc)
+      assert_equal([ [ 'Foo', nil, 'foo', 'mail.example.com' ] ], @msg.from.map(&:to_a))
+      assert_equal([ [ 'Bar', nil, 'bar', 'mail.example.com' ] ], @msg.sender.map(&:to_a))
+      assert_equal([ [ 'Baz', nil, 'baz', 'mail.example.com' ] ], @msg.reply_to.map(&:to_a))
+      assert_equal([ [ 'Alice', nil, 'alice', 'mail.example.com' ] ], @msg.to.map(&:to_a))
+      assert_equal([ [ 'Bob', nil, 'bob', 'mail.example.com' ] ], @msg.cc.map(&:to_a))
+      assert_equal([ [ 'Kate', nil, 'kate', 'mail.example.com' ] ], @msg.bcc.map(&:to_a))
     end
 
     def test_mail_address_header_field_multi_header_field
@@ -679,7 +679,7 @@ Content-Type: application/octet-stream
                      [ 'Bar', nil, 'bar', 'mail.example.com' ],
                      [ 'Baz', nil, 'baz', 'mail.example.com' ]
                    ],
-                   @msg.from)
+                   @msg.from.map(&:to_a))
     end
 
     def test_mail_address_header_field_no_value
