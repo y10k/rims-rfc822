@@ -10,8 +10,12 @@ Gem::Specification.new do |spec|
   spec.authors       = ['TOKI Yoshinori']
   spec.email         = ['toki@freedom.ne.jp']
 
-  spec.summary       = %q{TODO: Write a short summary, because RubyGems requires one.}
-  spec.description   = %q{TODO: Write a longer description or delete this line.}
+  spec.summary       = %q{Fast parser for a RFC822 formatted message.}
+  spec.description   = <<-'EOF'
+    Fast parser for a RFC822 formatted message.
+    This gem is a component of RIMS (Ruby IMap Server), but can be
+    used independently of RIMS.
+  EOF
   spec.homepage      = 'https://github.com/y10k/rims-rfc822'
   spec.license       = 'MIT'
 
