@@ -24,7 +24,7 @@ module RIMS
         )
       }x)
 
-      for _name, value in field_pair_list
+      for name, value in field_pair_list
         value.strip!
         name.freeze
         value.freeze
