@@ -200,7 +200,7 @@ module RIMS
       include Enumerable
 
       def initialize(header_txt)
-        @raw_source = header_txt.freeze
+        @raw_source = header_txt
         @field_list = nil
         @field_map = nil
       end
@@ -263,7 +263,7 @@ module RIMS
 
     class Body
       def initialize(body_txt)
-        @raw_source = body_txt.freeze
+        @raw_source = body_txt
       end
 
       attr_reader :raw_source
@@ -271,7 +271,7 @@ module RIMS
 
     class Message
       def initialize(msg_txt)
-        @raw_source = msg_txt.freeze
+        @raw_source = msg_txt.dup.freeze
         @header = nil
         @body = nil
         @content_type = nil
