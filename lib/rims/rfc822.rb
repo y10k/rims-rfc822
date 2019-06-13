@@ -86,7 +86,7 @@ module RIMS
       src_txt = phrase_txt.dup
       dst_txt = ''.encode(phrase_txt.encoding)
 
-      while (src_txt.sub!(/\A(:? " | \( | \) | \\ | [^"\(\)\\]+ )/x, ''))
+      while (src_txt.sub!(/\A (?: " | \( | \) | \\ | [^"\(\)\\]+ )/x, ''))
         match_txt = $&
         case (state)
         when :raw
