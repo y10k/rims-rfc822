@@ -1,10 +1,12 @@
-# RIMS::RFC822
+RIMS::RFC822
+============
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/rims/rfc822`. To experiment with that code, run `bin/console` for an interactive prompt.
+Fast parser for a RFC822 formatted message.
+This gem is a component of RIMS (Ruby IMap Server), but can be used
+independently of RIMS.
 
-TODO: Delete this and the text above, and describe your gem
-
-## Installation
+Installation
+------------
 
 Add this line to your application's Gemfile:
 
@@ -20,20 +22,53 @@ Or install it yourself as:
 
     $ gem install rims-rfc822
 
-## Usage
+Usage
+-----
 
-TODO: Write usage instructions here
+```ruby
+require 'rims/rfc822'
 
-## Development
+msg = RIMS::RFC822::Message.new(your_rfc822_text)
 
-After checking out the repo, run `bin/setup` to install dependencies. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
+p msg.header
+p msg.body
 
-To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and tags, and push the `.gem` file to [rubygems.org](https://rubygems.org).
+# source text attributes
+p msg.raw_source
+p msg.header.raw_source
+p msg.body.raw_source
 
-## Contributing
+# type attributes
+p msg.media_main_type
+p msg.media_sub_type
+p msg.content_type
+p msg.content_type_parameters
+p msg.charset
+p msg.boundary
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/rims-rfc822.
+# headear attributes
+p msg.date
+p msg.from
+p msg.sender
+p msg.reply_to
+p msg.to
+p msg.cc
+p msg.bcc
 
-## License
+# content attributes
+p msg.text?
+p msg.multipart?
+p msg.message?
+p msg.parts
+p msg.message
+```
+
+Contributing
+------------
+
+Bug reports and pull requests are welcome on GitHub at <https://github.com/y10k/rims-rfc822>.
+
+License
+-------
 
 The gem is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).
