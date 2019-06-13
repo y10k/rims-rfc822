@@ -350,7 +350,7 @@ module RIMS
       end
 
       def content_type_upcase
-        to_upper("#{media_main_type}/#{media_sub_type}")
+        "#{media_main_type_upcase}/#{media_sub_type_upcase}"
       end
 
       def content_type_parameters
