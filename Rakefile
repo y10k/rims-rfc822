@@ -4,8 +4,6 @@ require 'bundler/gem_tasks'
 require 'rake/testtask'
 require 'rdoc/task'
 
-task :default => :spec
-
 Rake::TestTask.new do |task|
   if ((ENV.key? 'RUBY_DEBUG') && (! ENV['RUBY_DEBUG'].empty?)) then
     task.ruby_opts << '-d'
