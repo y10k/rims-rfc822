@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# -*- coding: utf-8; frozen_string_literal: true -*-
 
 require 'rims/rfc822/version'
 require 'time'
@@ -54,7 +54,7 @@ module RIMS
 
         [ main_type.freeze, sub_type.freeze, params.freeze ].freeze
       else
-        [ 'application'.freeze, 'octet-stream'.freeze, {}.freeze ].freeze
+        [ 'application', 'octet-stream', {}.freeze ].freeze
       end
     end
     module_function :parse_content_type
@@ -373,11 +373,11 @@ module RIMS
       end
 
       def text?
-        media_main_type_upcase == 'TEXT'.freeze
+        media_main_type_upcase == 'TEXT'
       end
 
       def multipart?
-        media_main_type_upcase == 'MULTIPART'.freeze
+        media_main_type_upcase == 'MULTIPART'
       end
 
       def parts
@@ -395,7 +395,7 @@ module RIMS
       end
 
       def message?
-        media_main_type_upcase == 'MESSAGE'.freeze
+        media_main_type_upcase == 'MESSAGE'
       end
 
       def message
