@@ -275,9 +275,7 @@ module RIMS
         @header = nil
         @body = nil
         @content_type = nil
-        @is_multipart = nil
         @parts = nil
-        @is_message = nil
         @message = nil
         @date = nil
         @from = nil
@@ -371,14 +369,11 @@ module RIMS
       end
 
       def text?
-        media_main_type_upcase == 'TEXT'
+        media_main_type_upcase == 'TEXT'.freeze
       end
 
       def multipart?
-        if (@is_multipart.nil?) then
-          @is_multipart = (media_main_type_upcase == 'MULTIPART')
-        end
-        @is_multipart
+        media_main_type_upcase == 'MULTIPART'.freeze
       end
 
       def parts
@@ -396,10 +391,7 @@ module RIMS
       end
 
       def message?
-        if (@is_message.nil?) then
-          @is_message = (media_main_type_upcase == 'MESSAGE')
-        end
-        @is_message
+        media_main_type_upcase == 'MESSAGE'.freeze
       end
 
       def message
