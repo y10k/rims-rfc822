@@ -385,11 +385,13 @@ module RIMS
           if (@parts.nil?) then
             if (boundary = self.boundary) then
               part_list = RFC822.parse_multipart_body(boundary, body.raw_source)
-              @parts = part_list.map{|msg_txt| Message.new(msg_txt) }.freeze
+              @parts = part_list.map{|msg_txt| Message.new(msg_txt) }
             else
-              @parts = [].freeze
+              @parts = []
             end
+            @parts.freeze
           end
+
           @parts
         end
       end
@@ -403,6 +405,7 @@ module RIMS
           if (@message.nil?) then
             @message = Message.new(body.raw_source)
           end
+
           @message
         end
       end
@@ -415,9 +418,10 @@ module RIMS
             rescue ArgumentError
               @date = Time.at(0)
             end
+            @date.freeze
           end
 
-          @date.freeze
+          @date
         end
       end
 
@@ -430,6 +434,7 @@ module RIMS
             addr_list.freeze
             instance_variable_set(ivar_name, addr_list)
           end
+
           addr_list
         end
       end
