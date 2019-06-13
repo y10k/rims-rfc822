@@ -34,6 +34,52 @@ module RIMS
     end
     module_function :parse_header
 
+    def unquote_phrase(phrase_txt)
+      state = :raw
+      src_txt = phrase_txt.dup
+      dst_txt = ''.encode(phrase_txt.encoding)
+
+      while (src_txt.sub!(/\A (?: " | \( | \) | \\ | [^"\(\)\\]+ )/x, ''))
+        match_txt = $&
+        case (state)
+        when :raw
+          case (match_txt)
+          when '"'
+            state = :quote
+          when '('
+            state = :comment
+          when "\\"
+            src_txt.sub!(/\A./, '') and dst_txt << $&
+          else
+            dst_txt << match_txt
+          end
+        when :quote
+          case (match_txt)
+          when '"'
+            state = :raw
+          when "\\"
+            src_txt.sub!(/\A./, '') && dst_txt << $&
+          else
+            dst_txt << match_txt
+          end
+        when :comment
+          case (match_txt)
+          when ')'
+            state = :raw
+          when "\\"
+            src_txt.sub!(/\A./, '')
+          else
+            # ignore comment text.
+          end
+        else
+          raise "internal error: unknown state #{state}"
+        end
+      end
+
+      dst_txt.freeze
+    end
+    module_function :unquote_phrase
+
     def parse_content_type(content_type_txt)
       src_txt = content_type_txt.dup
       if (src_txt.sub!(%r"\A \s* (?<main_type>\S+?) \s* / \s* (?<sub_type>\S+?) \s* (?:;|\Z)"x, '')) then
@@ -80,52 +126,6 @@ module RIMS
       [].freeze
     end
     module_function :parse_multipart_body
-
-    def unquote_phrase(phrase_txt)
-      state = :raw
-      src_txt = phrase_txt.dup
-      dst_txt = ''.encode(phrase_txt.encoding)
-
-      while (src_txt.sub!(/\A (?: " | \( | \) | \\ | [^"\(\)\\]+ )/x, ''))
-        match_txt = $&
-        case (state)
-        when :raw
-          case (match_txt)
-          when '"'
-            state = :quote
-          when '('
-            state = :comment
-          when "\\"
-            src_txt.sub!(/\A./, '') and dst_txt << $&
-          else
-            dst_txt << match_txt
-          end
-        when :quote
-          case (match_txt)
-          when '"'
-            state = :raw
-          when "\\"
-            src_txt.sub!(/\A./, '') && dst_txt << $&
-          else
-            dst_txt << match_txt
-          end
-        when :comment
-          case (match_txt)
-          when ')'
-            state = :raw
-          when "\\"
-            src_txt.sub!(/\A./, '')
-          else
-            # ignore comment text.
-          end
-        else
-          raise "internal error: unknown state #{state}"
-        end
-      end
-
-      dst_txt.freeze
-    end
-    module_function :unquote_phrase
 
     Address = Struct.new(:display_name, :route, :local_part, :domain)
     class Address
