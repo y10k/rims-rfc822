@@ -12,76 +12,63 @@ module RIMS::Test
     end
     private :assert_strenc_equal
 
-    def test_split_message
-      msg =
-	"Content-Type: text/plain\r\n" +
-	"Subject: test\r\n" +
-	"\r\n" +
-	"HALO\r\n"
-      header_body_pair = RIMS::RFC822.split_message(msg.b)
-      assert_strenc_equal('ascii-8bit',
-                          "Content-Type: text/plain\r\n" +
-                          "Subject: test\r\n" +
-                          "\r\n",
-                          header_body_pair[0])
-      assert_strenc_equal('ascii-8bit',
-                          "HALO\r\n",
-                          header_body_pair[1])
+    data('head_body_crlf' => [
+	   "Content-Type: text/plain\r\n" +
+	   "Subject: test\r\n" +
+	   "\r\n" +
+	   "HALO\r\n",
 
-      msg =
-	"Content-Type: text/plain\n" +
-	"Subject: test\n" +
-	"\n" +
-	"HALO\n"
-      header_body_pair = RIMS::RFC822.split_message(msg.b)
-      assert_strenc_equal('ascii-8bit',
-                          "Content-Type: text/plain\n" +
-                          "Subject: test\n" +
-                          "\n",
-                          header_body_pair[0])
-      assert_strenc_equal('ascii-8bit',
-                          "HALO\n",
-                          header_body_pair[1])
+           "Content-Type: text/plain\r\n" +
+           "Subject: test\r\n" +
+           "\r\n",
 
-      msg =
-        "\n" +
-        "\r\n" +
-        " \t\n" +
-	"Content-Type: text/plain\r\n" +
-	"Subject: test\r\n" +
-	"\r\n" +
-	"HALO\r\n"
-      header_body_pair = RIMS::RFC822.split_message(msg.b)
-      assert_strenc_equal('ascii-8bit',
-                          "Content-Type: text/plain\r\n" +
-                          "Subject: test\r\n" +
-                          "\r\n",
-                          header_body_pair[0])
-      assert_strenc_equal('ascii-8bit',
-                          "HALO\r\n",
-                          header_body_pair[1])
+           "HALO\r\n"
+         ],
+         'head_body_lf' => [
+	   "Content-Type: text/plain\n" +
+	   "Subject: test\n" +
+	   "\n" +
+	   "HALO\n",
 
-      msg =
-	"Content-Type: text/plain\r\n" +
-	"Subject: test\r\n" +
-	"\r\n"
-      header_body_pair = RIMS::RFC822.split_message(msg.b)
-      assert_strenc_equal('ascii-8bit',
-                          "Content-Type: text/plain\r\n" +
-                          "Subject: test\r\n" +
-                          "\r\n",
-                          header_body_pair[0])
-      assert_strenc_equal('ascii-8bit', '', header_body_pair[1])
+           "Content-Type: text/plain\n" +
+           "Subject: test\n" +
+           "\n",
 
-      msg =
-	"Content-Type: text/plain\r\n" +
-	"Subject: test\r\n"
-      header_body_pair = RIMS::RFC822.split_message(msg.b)
-      assert_strenc_equal('ascii-8bit',
-                          "Content-Type: text/plain\r\n" +
-                          "Subject: test\r\n",
-                          header_body_pair[0])
-      assert_nil(header_body_pair[1])
+           "HALO\n"
+         ],
+         'head_only' => [
+	   "Content-Type: text/plain\r\n" +
+	   "Subject: test\r\n" +
+	   "\r\n",
+
+	   "Content-Type: text/plain\r\n" +
+	   "Subject: test\r\n" +
+	   "\r\n",
+
+           ''
+         ],
+         'body_only' => [       # need improvement
+           "HALO\r\n",
+
+           "HALO\r\n",
+
+           nil
+         ])
+    def test_split_message(data)
+      message, expected_header, expected_body = data
+      header, body = RIMS::RFC822.split_message(message.b)
+
+      if (expected_header) then
+        assert_strenc_equal('ascii-8bit', expected_header, header)
+      else
+        assert_nil(header)
+      end
+
+      if (expected_body) then
+        assert_strenc_equal('ascii-8bit', expected_body, body)
+      else
+        assert_nil(body)
+      end
     end
 
     def test_parse_header
