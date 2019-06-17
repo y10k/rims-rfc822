@@ -100,7 +100,10 @@ module RIMS
 
         [ main_type.freeze, sub_type.freeze, params.freeze ].freeze
       else
-        [ 'application', 'octet-stream', {}.freeze ].freeze
+        [ 'application'.dup.force_encoding(content_type_txt.encoding).freeze,
+          'octet-stream'.dup.force_encoding(content_type_txt.encoding).freeze,
+          {}.freeze
+        ].freeze
       end
     end
     module_function :parse_content_type
