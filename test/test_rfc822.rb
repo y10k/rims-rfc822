@@ -212,33 +212,9 @@ module RIMS::Test
              { 'charset' => %w[ charset utf-8 ] }
            ]
          ],
-         'text_upcase_params' => [
-           'text/plain; CHARSET=UTF-8; Foo=apple; Bar="banana"',
-           [ 'text', 'plain',
-             { 'charset' => %w[ CHARSET UTF-8 ],
-               'foo' => %w[ Foo apple ],
-               'bar' => %w[ Bar banana ]
-             }
-           ]
-         ],
-         'text_params_no_spaces' => [
-           'text/plain;CHARSET=UTF-8;Foo=apple;Bar="banana"',
-           [ 'text', 'plain',
-             { 'charset' => %w[ CHARSET UTF-8 ],
-               'foo' => %w[ Foo apple ],
-               'bar' => %w[ Bar banana ]
-             }
-           ]
-         ],
          'multipart_boundary' => [
-           'multipart/mixed; boundary=----=_Part_1459890_1462677911.1383882437398',
-           [ 'multipart', 'mixed',
-             { 'boundary' => %w[ boundary ----=_Part_1459890_1462677911.1383882437398 ] }
-           ]
-         ],
-         'multipart_boundary_long_field' => [
            "multipart/alternative; \r\n" +
-           "	boundary=\"----=_Part_1459891_982342968.1383882437398\"",
+           "	boundary=----=_Part_1459891_982342968.1383882437398",
            [ 'multipart', 'alternative',
              { 'boundary' => %w[ boundary ----=_Part_1459891_982342968.1383882437398 ] }
            ]
