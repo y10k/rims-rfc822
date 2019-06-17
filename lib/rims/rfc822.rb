@@ -97,15 +97,15 @@ module RIMS
     end
     module_function :parse_parameters
 
-    def parse_content_type(content_type_txt)
-      if (content_type_txt =~ %r"\A \s* (?<main_type>\S+?) \s* / \s* (?<sub_type>\S+?) \s* (?:;|\Z)"x) then
+    def parse_content_type(type_txt)
+      if (type_txt =~ %r"\A \s* (?<main_type>\S+?) \s* / \s* (?<sub_type>\S+?) \s* (?:;|\Z)"x) then
         main_type = $~[:main_type]
         sub_type = $~[:sub_type]
         params = parse_parameters($')
         [ main_type.freeze, sub_type.freeze, params ].freeze
       else
-        [ 'application'.dup.force_encoding(content_type_txt.encoding).freeze,
-          'octet-stream'.dup.force_encoding(content_type_txt.encoding).freeze,
+        [ 'application'.dup.force_encoding(type_txt.encoding).freeze,
+          'octet-stream'.dup.force_encoding(type_txt.encoding).freeze,
           {}.freeze
         ].freeze
       end

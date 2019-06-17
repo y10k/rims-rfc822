@@ -283,8 +283,8 @@ Content-Transfer-Encoding: quoted-printable
       PART
 
       header_txt, body_txt = RIMS::RFC822.split_message(part_list[0])
-      content_type_txt = RIMS::RFC822.parse_header(header_txt).find{|n, v| n == 'Content-Type' }[1]
-      boundary = RIMS::RFC822.parse_content_type(content_type_txt)[2]['boundary'][1]
+      type_txt = RIMS::RFC822.parse_header(header_txt).find{|n, v| n == 'Content-Type' }[1]
+      boundary = RIMS::RFC822.parse_content_type(type_txt)[2]['boundary'][1]
 
       part_list = RIMS::RFC822.parse_multipart_body(boundary, body_txt)
       assert_equal(2, part_list.length)
