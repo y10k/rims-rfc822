@@ -238,6 +238,43 @@ module RIMS::Test
       end
     end
 
+    data('inline' => [
+           'inline',
+           [ 'inline', {} ]
+         ],
+         'filename' => [
+           'attachment; filename=genome.jpeg',
+           [ 'attachment',
+             { 'filename' => %w[ filename genome.jpeg ] }
+           ]
+         ],
+         'some_params' => [
+           %Q'attachment; filename=genome.jpeg;\r\n' +
+           %Q'  modification-date="Wed, 12 Feb 1997 16:29:51 -0500";',
+           [ 'attachment',
+             { 'filename'          => [ 'filename', 'genome.jpeg' ],
+               'modification-date' => [ 'modification-date', 'Wed, 12 Feb 1997 16:29:51 -0500' ],
+             }
+           ]
+         ],
+         'empty' => [
+           '',
+           [ nil, {} ]
+         ])
+    def test_parse_content_disposition(data)
+      header_field, expected_content_disposition = data
+      content_disposition = RIMS::RFC822.parse_content_disposition(header_field.b)
+      assert_equal(expected_content_disposition, content_disposition)
+
+      type, params = content_disposition
+      assert_equal(Encoding::ASCII_8BIT, type.encoding, type) if type
+      for normalized_name, (name, value) in params
+        assert_equal(Encoding::ASCII_8BIT, normalized_name.encoding, normalized_name)
+        assert_equal(Encoding::ASCII_8BIT, name.encoding, name)
+        assert_equal(Encoding::ASCII_8BIT, value.encoding, value)
+      end
+    end
+
     def test_parse_multipart_body
       body_txt = <<-'MULTIPART'.b
 ------=_Part_1459890_1462677911.1383882437398

@@ -112,6 +112,23 @@ module RIMS
     end
     module_function :parse_content_type
 
+    def parse_content_disposition(disposition_txt)
+      type, params_txt = disposition_txt.split(';', 2)
+      if (type) then
+        type.strip!
+        type.freeze
+        if (params_txt) then
+          params = parse_parameters(params_txt)
+        else
+          params = {}.freeze
+        end
+        [ type, params ].freeze
+      else
+        [ nil, {}.freeze ].freeze
+      end
+    end
+    module_function :parse_content_disposition
+
     def parse_multipart_body(boundary, body_txt)
       delim = '--' + boundary
       term = delim + '--'
