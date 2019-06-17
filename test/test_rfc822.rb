@@ -140,6 +140,68 @@ module RIMS::Test
       assert_strenc_equal('ascii-8bit', expected_unquoted_phrase, RIMS::RFC822.unquote_phrase(quoted_phrase.b))
     end
 
+    data('empty' => [
+           '',
+           {}
+         ],
+         'charset' => [
+           ' charset=utf-8',
+           { 'charset' => %w[ charset utf-8 ] }
+         ],
+         'upcases' => [
+           ' CHARSET=utf-8',
+           { 'charset' => %w[ CHARSET utf-8 ] }
+         ],
+         'ignore_spaces' => [
+           ' charset =	utf-8 ',
+           { 'charset' => %w[ charset utf-8 ] }
+         ],
+         'quoted' => [
+           ' x-halo=" Hello world. "',
+           { 'x-halo' => [ 'x-halo', ' Hello world. ' ] }
+         ],
+         'some_params' => [
+           ' CHARSET=UTF-8; Foo = apple; Bar="banana"',
+           { 'charset' => %w[ CHARSET UTF-8 ],
+             'foo'     => %w[ Foo apple ],
+             'bar'     => %w[ Bar banana ]
+           }
+         ],
+         'no_spaces' => [
+           'CHARSET=UTF-8;Foo=apple;Bar="banana"',
+           { 'charset' => %w[ CHARSET UTF-8 ],
+             'foo'     => %w[ Foo apple ],
+             'bar'     => %w[ Bar banana ]
+           }
+         ],
+         'extra_sep' => [
+           ' CHARSET=UTF-8;; ; Foo = apple; Bar="banana";',
+           { 'charset' => %w[ CHARSET UTF-8 ],
+             'foo'     => %w[ Foo apple ],
+             'bar'     => %w[ Bar banana ]
+           }
+         ],
+         'boundary' => [
+           ' boundary=----=_Part_1459890_1462677911.1383882437398',
+           { 'boundary' => %w[ boundary ----=_Part_1459890_1462677911.1383882437398 ] }
+         ],
+         'multilines' => [
+           "\r\n" +
+           "	boundary=\"----=_Part_1459891_982342968.1383882437398\"",
+           { 'boundary' => %w[ boundary ----=_Part_1459891_982342968.1383882437398 ] }
+         ])
+    def test_parse_parameters(data)
+      parameters_txt, expected_params = data
+      params = RIMS::RFC822.parse_parameters(parameters_txt.b)
+
+      assert_equal(expected_params, params)
+      for normalized_name, (name, value) in params
+        assert_equal(Encoding::ASCII_8BIT, normalized_name.encoding, normalized_name)
+        assert_equal(Encoding::ASCII_8BIT, name.encoding, name)
+        assert_equal(Encoding::ASCII_8BIT, value.encoding, value)
+      end
+    end
+
     data('text' => [
            'text/plain',
            [ 'text', 'plain', {} ]

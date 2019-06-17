@@ -80,25 +80,29 @@ module RIMS
     end
     module_function :unquote_phrase
 
+    def parse_parameters(parameters_txt)
+      params = {}
+      parameters_txt.scan(%r'(?<name>\S+?) \s* = \s* (?: (?<quoted_string>".*?") | (?<token>\S+?) ) \s* (?:;|\Z)'x) do
+        name = $~[:name]
+        if ($~[:quoted_string]) then
+          quoted_value = $~[:quoted_string]
+          value = unquote_phrase(quoted_value)
+        else
+          value = $~[:token]
+        end
+        params[name.downcase.freeze] = [ name.freeze, value.freeze ].freeze
+      end
+
+      params.freeze
+    end
+    module_function :parse_parameters
+
     def parse_content_type(content_type_txt)
-      src_txt = content_type_txt.dup
-      if (src_txt.sub!(%r"\A \s* (?<main_type>\S+?) \s* / \s* (?<sub_type>\S+?) \s* (?:;|\Z)"x, '')) then
+      if (content_type_txt =~ %r"\A \s* (?<main_type>\S+?) \s* / \s* (?<sub_type>\S+?) \s* (?:;|\Z)"x) then
         main_type = $~[:main_type]
         sub_type = $~[:sub_type]
-
-        params = {}
-        src_txt.scan(%r'(?<name>\S+?) \s* = \s* (?: (?<quoted_string>".*?") | (?<token>\S+?) ) \s* (?:;|\Z)'x) do
-          name = $~[:name]
-          if ($~[:quoted_string]) then
-            quoted_value = $~[:quoted_string]
-            value = unquote_phrase(quoted_value)
-          else
-            value = $~[:token]
-          end
-          params[name.downcase] = [ name.freeze, value.freeze ].freeze
-        end
-
-        [ main_type.freeze, sub_type.freeze, params.freeze ].freeze
+        params = parse_parameters($')
+        [ main_type.freeze, sub_type.freeze, params ].freeze
       else
         [ 'application'.dup.force_encoding(content_type_txt.encoding).freeze,
           'octet-stream'.dup.force_encoding(content_type_txt.encoding).freeze,
