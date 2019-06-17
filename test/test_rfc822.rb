@@ -283,54 +283,72 @@ baz
       assert_equal([], RIMS::RFC822.parse_multipart_body('sep', ''))
     end
 
-    def test_parse_mail_address_list_addr_spec
-      assert_equal([], RIMS::RFC822.parse_mail_address_list(''.b).map(&:to_a))
-      assert_equal([ [ nil, nil, 'toki', 'freedom.ne.jp' ] ],
-                   RIMS::RFC822.parse_mail_address_list('toki@freedom.ne.jp'.b).map(&:to_a))
-      assert_equal([ [ nil, nil, 'toki', 'freedom.ne.jp' ] ],
-                   RIMS::RFC822.parse_mail_address_list(' toki@freedom.ne.jp '.b).map(&:to_a))
-    end
+    data('local_part@domain:empty' => [
+           '',
+           []
+         ],
+         'local_part@domain:normal' => [
+           'toki@freedom.ne.jp',
+           [ RIMS::RFC822::Address.new(nil,  nil, 'toki', 'freedom.ne.jp') ]
+         ],
+         'local_part@domain:ignore_spaces' => [
+           ' toki@freedom.ne.jp ',
+           [ RIMS::RFC822::Address.new(nil,  nil, 'toki', 'freedom.ne.jp') ]
+         ],
+         'display_name:normal' => [
+           'TOKI Yoshinori <toki@freedom.ne.jp>',
+           [ RIMS::RFC822::Address.new('TOKI Yoshinori', nil, 'toki', 'freedom.ne.jp') ]
+         ],
+         'display_name:quoted' => [
+           '"TOKI Yoshinori" <toki@freedom.ne.jp>',
+           [ RIMS::RFC822::Address.new('TOKI Yoshinori', nil, 'toki', 'freedom.ne.jp') ]
+         ],
+         'display_name:ignore_comment' => [
+           'TOKI(土岐) Yoshinori <toki@freedom.ne.jp>',
+           [ RIMS::RFC822::Address.new('TOKI Yoshinori', nil, 'toki', 'freedom.ne.jp') ]
+         ],
+         'display_name:escape_spcial' => [
+           'TOKI\,Yoshinori <toki@freedom.ne.jp>',
+           [ RIMS::RFC822::Address.new('TOKI,Yoshinori', nil, 'toki', 'freedom.ne.jp') ]
+         ],
+         'display_name:quoted_specials' => [
+           '"toki@freedom.ne.jp" <toki@freedom.ne.jp>',
+           [ RIMS::RFC822::Address.new('toki@freedom.ne.jp', nil, 'toki', 'freedom.ne.jp') ]
+         ],
+         'route' => [
+           'TOKI Yoshinori <@mail.freedom.ne.jp,@smtp.gmail.com:toki@freedom.ne.jp>',
+           [ RIMS::RFC822::Address.new('TOKI Yoshinori', '@mail.freedom.ne.jp,@smtp.gmail.com', 'toki', 'freedom.ne.jp') ]
+         ],
+         'list:normal' => [
+           'toki: toki@freedom.ne.jp, TOKI Yoshinori <toki@freedom.ne.jp>, TOKI Yoshinori <@mail.freedom.ne.jp,@smtp.gmail.com:toki@freedom.ne.jp>;',
+           [ RIMS::RFC822::Address.new(nil, nil, 'toki', nil),
+             RIMS::RFC822::Address.new(nil, nil, 'toki', 'freedom.ne.jp'),
+             RIMS::RFC822::Address.new('TOKI Yoshinori', nil, 'toki', 'freedom.ne.jp'),
+             RIMS::RFC822::Address.new('TOKI Yoshinori', '@mail.freedom.ne.jp,@smtp.gmail.com', 'toki', 'freedom.ne.jp'),
+             RIMS::RFC822::Address.new(nil, nil, nil, nil)
+           ]
+         ],
+         'list:multiline' => [
+           "toki@freedom.ne.jp,\n" +
+           "  TOKI Yoshinori <toki@freedom.ne.jp>\n" +
+           "  , Yoshinori Toki <toki@freedom.ne.jp>  ",
+           [ RIMS::RFC822::Address.new(nil, nil, 'toki', 'freedom.ne.jp'),
+             RIMS::RFC822::Address.new('TOKI Yoshinori', nil, 'toki', 'freedom.ne.jp'),
+             RIMS::RFC822::Address.new('Yoshinori Toki', nil, 'toki', 'freedom.ne.jp')
+           ]
+         ])
+    def test_parse_mail_address_list(data)
+      address_list_txt, expected_address_list = data
+      address_list = RIMS::RFC822.parse_mail_address_list(address_list_txt.b)
 
-    def test_parse_mail_address_list_name_addr
-      assert_equal([ [ 'TOKI Yoshinori', nil, 'toki', 'freedom.ne.jp' ] ],
-                   RIMS::RFC822.parse_mail_address_list('TOKI Yoshinori <toki@freedom.ne.jp>'.b).map(&:to_a))
-      assert_equal([ [ 'TOKI Yoshinori', nil, 'toki', 'freedom.ne.jp' ] ],
-                   RIMS::RFC822.parse_mail_address_list('"TOKI Yoshinori" <toki@freedom.ne.jp>'.b).map(&:to_a))
-      assert_equal([ [ 'TOKI Yoshinori', nil, 'toki', 'freedom.ne.jp' ] ],
-                   RIMS::RFC822.parse_mail_address_list('TOKI(土岐) Yoshinori <toki@freedom.ne.jp>'.b).map(&:to_a))
-      assert_equal([ [ 'TOKI,Yoshinori', nil, 'toki', 'freedom.ne.jp' ] ],
-                   RIMS::RFC822.parse_mail_address_list('TOKI\,Yoshinori <toki@freedom.ne.jp>'.b).map(&:to_a))
-      assert_equal([ [ 'toki@freedom.ne.jp', nil, 'toki', 'freedom.ne.jp' ] ],
-                   RIMS::RFC822.parse_mail_address_list('"toki@freedom.ne.jp" <toki@freedom.ne.jp>'.b).map(&:to_a))
-    end
-
-    def test_parse_mail_address_list_route_addr
-      assert_equal([ [ 'TOKI Yoshinori', '@mail.freedom.ne.jp,@smtp.gmail.com', 'toki', 'freedom.ne.jp' ] ],
-                   RIMS::RFC822.parse_mail_address_list('TOKI Yoshinori <@mail.freedom.ne.jp,@smtp.gmail.com:toki@freedom.ne.jp>'.b).map(&:to_a))
-    end
-
-    def test_parse_mail_address_list_group
-      assert_equal([ [ nil, nil, 'toki', nil ],
-                     [ nil, nil, 'toki', 'freedom.ne.jp' ],
-                     [ 'TOKI Yoshinori', nil, 'toki', 'freedom.ne.jp' ],
-                     [ 'TOKI Yoshinori', '@mail.freedom.ne.jp,@smtp.gmail.com', 'toki', 'freedom.ne.jp' ],
-                     [ nil, nil, nil, nil ]
-                   ],
-                   RIMS::RFC822.parse_mail_address_list('toki: ' +
-                                                        'toki@freedom.ne.jp, ' +
-                                                        'TOKI Yoshinori <toki@freedom.ne.jp>, ' +
-                                                        'TOKI Yoshinori <@mail.freedom.ne.jp,@smtp.gmail.com:toki@freedom.ne.jp>' +
-                                                        ';'.b).map(&:to_a))
-    end
-
-    def test_parse_mail_address_list_multiline
-      assert_equal([ [ nil, nil, 'toki', 'freedom.ne.jp' ],
-                     [ 'TOKI Yoshinori', nil, 'toki', 'freedom.ne.jp' ],
-                     [ 'Yoshinori Toki', nil, 'toki', 'freedom.ne.jp' ]
-                   ],
-                   RIMS::RFC822.parse_mail_address_list("toki@freedom.ne.jp,\n" +
-                                                        "  TOKI Yoshinori <toki@freedom.ne.jp>\n" +
-                                                        "  , Yoshinori Toki <toki@freedom.ne.jp>  ").map(&:to_a))
+      assert_equal(expected_address_list, address_list)
+      address_list.each_with_index do |addr, i|
+        for name, value in addr.to_h
+          if (value) then
+            assert_equal(Encoding::ASCII_8BIT, value.encoding, "address_list[#{i}].#{name}: #{value}")
+          end
+        end
+      end
     end
   end
 
