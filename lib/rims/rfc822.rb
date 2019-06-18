@@ -351,23 +351,26 @@ module RIMS
         content_type.upcase
       end
 
-      def content_type_parameters
+      def content_type_parameter(name)
         setup_content_type
-        @content_type[2].each_value.map{|name, value| [ name, value ] }
-      end
-
-      def charset
-        setup_content_type
-        if (name_value_pair = @content_type[2]['charset']) then
+        if (name_value_pair = @content_type[2][name.downcase]) then
           name_value_pair[1]
         end
+      end
+
+      def content_type_parameter_list
+        setup_content_type
+        @content_type[2].values
+      end
+
+      alias content_type_parameters content_type_parameter_list
+
+      def charset
+        content_type_parameter('charset')
       end
 
       def boundary
-        setup_content_type
-        if (name_value_pair = @content_type[2]['boundary']) then
-          name_value_pair[1]
-        end
+        content_type_parameter('boundary')
       end
 
       def text?

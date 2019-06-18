@@ -432,11 +432,12 @@ baz
     def setup_message(headers={},
                       content_type: 'text/plain; charset=utf-8',
                       body: "Hello world.\r\n")
-      @msg = RIMS::RFC822::Message.new(headers.map{|n, v| "#{n}: #{v}\r\n" }.join('') +
-                                       "Content-Type: #{content_type}\r\n" +
-                                       "Subject: test\r\n" +
-                                       "\r\n" +
-                                       body)
+      src = headers.map{|n, v| "#{n}: #{v}\r\n" }.join('')
+      src << "Content-Type: #{content_type}\r\n" if content_type
+      src << "Subject: test\r\n"
+      src << "\r\n"
+      src << body if body
+      @msg = RIMS::RFC822::Message.new(src)
       pp @msg if $DEBUG
     end
 
@@ -475,9 +476,20 @@ baz
       assert_equal('TEXT/PLAIN', @msg.content_type_upcase)
     end
 
-    def test_content_type_parameters
+    def test_content_type_parameter
       setup_message(content_type: 'text/plain; charset=utf-8; foo=apple; Bar=Banana')
-      assert_equal([ %w[ charset utf-8 ], %w[ foo apple ], %w[ Bar Banana ] ], @msg.content_type_parameters)
+      assert_equal('utf-8', @msg.content_type_parameter('charset'))
+      assert_equal('apple', @msg.content_type_parameter('foo'))
+      assert_equal('Banana', @msg.content_type_parameter('bar'))
+      assert_nil(@msg.content_type_parameter('baz'))
+      assert_equal([ %w[ charset utf-8 ], %w[ foo apple ], %w[ Bar Banana ] ], @msg.content_type_parameter_list)
+    end
+
+    def test_content_type_no_header
+      setup_message(content_type: nil)
+      assert_equal('application/octet-stream', @msg.content_type)
+      assert_nil(@msg.content_type_parameter('charset'))
+      assert_equal([], @msg.content_type_parameter_list)
     end
 
     def test_charset
