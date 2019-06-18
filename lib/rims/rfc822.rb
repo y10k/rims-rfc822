@@ -313,25 +313,15 @@ module RIMS
 
       def setup_content_type
         if (@content_type.nil?) then
-          @content_type = RFC822.parse_content_type(header['content-type'] || '')
+          @content_type = RFC822.parse_content_type(header['Content-Type'] || '')
           self
         end
       end
       private :setup_content_type
 
-      def to_upper(text_or_nil)
-        text_or_nil.upcase if text_or_nil
-      end
-      private :to_upper
-
       def media_main_type
         setup_content_type
         @content_type[0]
-      end
-
-      def media_main_type_upcase
-        setup_content_type
-        to_upper(@content_type[0])
       end
 
       def media_sub_type
@@ -341,19 +331,24 @@ module RIMS
 
       alias media_subtype media_sub_type
 
-      def media_sub_type_upcase
-        setup_content_type
-        to_upper(@content_type[1])
-      end
-
-      alias media_subtype_upcase media_sub_type_upcase
-
       def content_type
         "#{media_main_type}/#{media_sub_type}"
       end
 
+      def media_main_type_upcase
+        # not return `nil'
+        media_main_type.upcase
+      end
+
+      def media_sub_type_upcase
+        # not return `nil'
+        media_sub_type.upcase
+      end
+
+      alias media_subtype_upcase media_sub_type_upcase
+
       def content_type_upcase
-        "#{media_main_type_upcase}/#{media_sub_type_upcase}"
+        content_type.upcase
       end
 
       def content_type_parameters
