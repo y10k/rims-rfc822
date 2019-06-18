@@ -299,6 +299,7 @@ module RIMS
         @header = nil
         @body = nil
         @content_type = nil
+        @content_disposition = nil
         @parts = nil
         @message = nil
         @date = nil
@@ -393,6 +394,43 @@ module RIMS
       def boundary
         content_type_parameter('boundary')
       end
+
+      def setup_content_disposition
+        if (header.key? 'Content-Disposition') then
+          if (@content_disposition.nil?) then
+            @content_disposition = RFC822.parse_content_disposition(header['Content-Disposition'])
+            self
+          end
+        end
+      end
+      private :setup_content_type
+
+      def content_disposition
+        setup_content_disposition
+        @content_disposition && @content_disposition[0]
+      end
+
+      def content_disposition_upcase
+        if (type = content_disposition) then
+          type.upcase
+        end
+      end
+
+      def content_disposition_parameter(name)
+        setup_content_disposition
+        if (@content_disposition) then
+          if (name_value_pair = @content_disposition[1][name.downcase]) then
+            name_value_pair[1]
+          end
+        end
+      end
+
+      def content_disposition_parameter_list
+        setup_content_type
+        @content_disposition && @content_disposition[1].values
+      end
+
+      alias content_disposition_parameters content_disposition_parameter_list
 
       def text?
         media_main_type_upcase == 'TEXT'

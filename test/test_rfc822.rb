@@ -587,6 +587,30 @@ baz
       assert_nil(@msg.boundary)
     end
 
+    def test_content_disposition
+      setup_message('Content-Disposition' => 'inline')
+      assert_equal('inline', @msg.content_disposition)
+      assert_equal('INLINE', @msg.content_disposition_upcase)
+    end
+
+    def test_content_disposition_parameter
+      setup_message('Content-Disposition' => 'attachment; filename=genome.jpeg; Modification-Date="Wed, 12 Feb 1997 16:29:51 -0500"')
+      assert_equal('genome.jpeg', @msg.content_disposition_parameter('filename'))
+      assert_equal('Wed, 12 Feb 1997 16:29:51 -0500', @msg.content_disposition_parameter('modification-date'))
+      assert_nil(@msg.content_disposition_parameter('size'))
+      assert_equal([ [ 'filename', 'genome.jpeg' ],
+                     [ 'Modification-Date', 'Wed, 12 Feb 1997 16:29:51 -0500' ]
+                   ],
+                   @msg.content_disposition_parameter_list)
+    end
+
+    def test_content_disposition_no_header
+      setup_message
+      assert_nil(@msg.content_disposition)
+      assert_nil(@msg.content_disposition_parameter('filename'))
+      assert_nil(@msg.content_disposition_parameter_list)
+    end
+
     def test_text?
       setup_message
       assert_equal(true, @msg.text?)
