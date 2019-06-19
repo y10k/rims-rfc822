@@ -41,10 +41,16 @@ p msg.body.raw_source
 # type attributes
 p msg.media_main_type
 p msg.media_sub_type
+p msg.media_subtype # alias of media_sub_type
 p msg.content_type
-p msg.content_type_parameters
+p msg.content_type_parameter(name)
+p msg.content_type_parameter_list
 p msg.charset
 p msg.boundary
+p msg.content_disposition
+p msg.content_disposition_parameter(name)
+p msg.content_disposition_parameter_list
+p msg.content_language
 
 # headear attributes
 p msg.date
