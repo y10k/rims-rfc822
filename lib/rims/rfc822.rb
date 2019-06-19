@@ -312,6 +312,7 @@ module RIMS
         @body = nil
         @content_type = nil
         @content_disposition = nil
+        @content_language = nil
         @parts = nil
         @message = nil
         @date = nil
@@ -443,6 +444,28 @@ module RIMS
       end
 
       alias content_disposition_parameters content_disposition_parameter_list
+
+      def setup_content_language
+        if (header.key? 'Content-Language') then
+          if (@content_language.nil?) then
+            @content_language = header.field_value_list('Content-Language').map{|tags_txt| RFC822.parse_content_language(tags_txt) }.inject(:+)
+            @content_language.freeze
+            self
+          end
+        end
+      end
+      private :setup_content_language
+
+      def content_language
+        setup_content_language
+        @content_language
+      end
+
+      def content_language_upcase
+        if (tag_list = content_language) then
+          tag_list.map{|tag| tag.upcase }
+        end
+      end
 
       def text?
         media_main_type_upcase == 'TEXT'

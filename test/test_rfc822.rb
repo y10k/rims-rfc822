@@ -627,6 +627,17 @@ baz
       assert_nil(@msg.content_disposition_parameter_list)
     end
 
+    def test_content_language
+      setup_message('Content-Language' => 'mi, En')
+      assert_equal(%w[ mi En ], @msg.content_language)
+      assert_equal(%w[ MI EN ], @msg.content_language_upcase)
+    end
+
+    def test_content_language_no_header
+      setup_message
+      assert_nil(@msg.content_language)
+    end
+
     def test_text?
       setup_message
       assert_equal(true, @msg.text?)
