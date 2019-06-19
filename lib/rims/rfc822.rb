@@ -129,6 +129,18 @@ module RIMS
     end
     module_function :parse_content_disposition
 
+    def parse_content_language(language_tags_txt)
+      tag_list = language_tags_txt.split(',')
+      for tag in tag_list
+        tag.strip!
+        tag.freeze
+      end
+      tag_list.reject!(&:empty?)
+
+      tag_list.freeze
+    end
+    module_function :parse_content_language
+
     def parse_multipart_body(boundary, body_txt)
       delim = '--' + boundary
       term = delim + '--'

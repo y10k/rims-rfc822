@@ -275,6 +275,22 @@ module RIMS::Test
       end
     end
 
+    data('simple'        => [ 'da',       %w[ da ]    ],
+         'multiple'      => [ 'mi, en',   %w[ mi en ] ],
+         'ignore_spaces' => [ '  da ',    %w[ da ]    ],
+         'no_spaces'     => [ 'mi,en',    %w[ mi en ] ],
+         'extra_sep'     => [ 'mi,, en,', %w[ mi en ] ],
+         'empty'         => [ '',           []        ])
+    def test_parse_content_language(data)
+      header_field, expected_tag_list = data
+      tag_list = RIMS::RFC822.parse_content_language(header_field.b)
+      assert_equal(expected_tag_list, tag_list)
+
+      for tag in tag_list
+        assert_equal(Encoding::ASCII_8BIT, tag.encoding, tag)
+      end
+    end
+
     def test_parse_multipart_body
       body_txt = <<-'MULTIPART'.b
 ------=_Part_1459890_1462677911.1383882437398
