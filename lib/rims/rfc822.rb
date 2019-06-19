@@ -430,7 +430,7 @@ module RIMS
           ivar_name = '@' + field_name.downcase.gsub('-', '_')
           addr_list = instance_variable_get(ivar_name)
           if (addr_list.nil?) then
-            addr_list = header.field_value_list(field_name).map{|addr_list_str| RFC822.parse_mail_address_list(addr_list_str) }.inject(:+)
+            addr_list = header.field_value_list(field_name).map{|addr_list_txt| RFC822.parse_mail_address_list(addr_list_txt) }.inject(:+)
             addr_list.freeze
             instance_variable_set(ivar_name, addr_list)
           end
