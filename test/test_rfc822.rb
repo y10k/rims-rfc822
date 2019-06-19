@@ -47,12 +47,12 @@ module RIMS::Test
 
            ''
          ],
-         'body_only' => [       # need improvement
+         'body_only' => [
            "HALO\r\n",
 
-           "HALO\r\n",
+           nil,
 
-           nil
+           "HALO\r\n"
          ])
     def test_split_message(data)
       message, expected_header, expected_body = data
