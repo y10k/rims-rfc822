@@ -97,23 +97,8 @@ module RIMS
     end
     module_function :parse_parameters
 
-    def parse_content_type(type_txt)
-      if (type_txt =~ %r"\A \s* (?<main_type>\S+?) \s* / \s* (?<sub_type>\S+?) \s* (?:;|\Z)"x) then
-        main_type = $~[:main_type]
-        sub_type = $~[:sub_type]
-        params = parse_parameters($')
-        [ main_type.freeze, sub_type.freeze, params ].freeze
-      else
-        [ 'application'.dup.force_encoding(type_txt.encoding).freeze,
-          'octet-stream'.dup.force_encoding(type_txt.encoding).freeze,
-          {}.freeze
-        ].freeze
-      end
-    end
-    module_function :parse_content_type
-
-    def parse_content_disposition(disposition_txt)
-      type, params_txt = disposition_txt.split(';', 2)
+    def split_parameters(type_params_txt)
+      type, params_txt = type_params_txt.split(';', 2)
       if (type) then
         type.strip!
         type.freeze
@@ -126,6 +111,35 @@ module RIMS
       else
         [ nil, {}.freeze ].freeze
       end
+    end
+    module_function :split_parameters
+
+    def parse_content_type(type_txt)
+      media_type_txt, params = split_parameters(type_txt)
+      if (media_type_txt) then
+        main_type, sub_type = media_type_txt.split('/', 2)
+        if (main_type) then
+          main_type.strip!
+          main_type.freeze
+          if (sub_type) then
+            sub_type.strip!
+            sub_type.freeze
+            if (! main_type.empty? && ! sub_type.empty?) then
+              return [ main_type, sub_type, params ].freeze
+            end
+          end
+        end
+      end
+
+      [ 'application'.dup.force_encoding(type_txt.encoding).freeze,
+        'octet-stream'.dup.force_encoding(type_txt.encoding).freeze,
+        params
+      ].freeze
+    end
+    module_function :parse_content_type
+
+    def parse_content_disposition(disposition_txt)
+      split_parameters(disposition_txt)
     end
     module_function :parse_content_disposition
 
