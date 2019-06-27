@@ -258,24 +258,24 @@ module RIMS
       def initialize(header_txt)
         @raw_source = header_txt
         @field_list = nil
-        @field_map = nil
+        @field_table = nil
       end
 
       attr_reader :raw_source
 
       def setup_header
-        if (@field_list.nil? || @field_map.nil?) then
+        if (@field_list.nil? || @field_table.nil?) then
           @field_list = RFC822.parse_header(@raw_source)
-          @field_map = {}
+          @field_table = {}
           for name, value in @field_list
             key = name.downcase
-            @field_map[key] = [] unless (@field_map.key? key)
-            @field_map[key] << value
+            @field_table[key] = [] unless (@field_table.key? key)
+            @field_table[key] << value
           end
-          @field_map.each_value do |value_list|
+          @field_table.each_value do |value_list|
             value_list.freeze
           end
-          @field_map.freeze
+          @field_table.freeze
           self
         end
       end
@@ -292,19 +292,19 @@ module RIMS
 
       def key?(name)
         setup_header
-        @field_map.key? name.downcase
+        @field_table.key? name.downcase
       end
 
       def [](name)
         setup_header
-        if (value_list = @field_map[name.downcase]) then
+        if (value_list = @field_table[name.downcase]) then
           value_list[0]
         end
       end
 
       def fetch_upcase(name)
         setup_header
-        if (value_list = @field_map[name.downcase]) then
+        if (value_list = @field_table[name.downcase]) then
           if (value = value_list[0]) then
             value.upcase
           end
@@ -313,7 +313,7 @@ module RIMS
 
       def field_value_list(name)
         setup_header
-        @field_map[name.downcase]
+        @field_table[name.downcase]
       end
     end
 
