@@ -325,9 +325,29 @@ module RIMS
       attr_reader :raw_source
     end
 
+    CHARSET_ALIAS_TABLE = {}    # :nodoc:
+
+    def add_charset_alias(name, encoding, charset_alias_table=CHARSET_ALIAS_TABLE)
+      charset_alias_table[name.upcase] = encoding
+      charset_alias_table
+    end
+    module_function :add_charset_alias
+
+    def delete_charset_alias(name, charset_alias_table=CHARSET_ALIAS_TABLE)
+      charset_alias_table.delete(name.upcase)
+    end
+    module_function :delete_charset_alias
+
+    #add_charset_alias('euc-jp', Encoding::CP51932)
+    add_charset_alias('euc-jp', Encoding::EUCJP_MS)
+    #add_charset_alias('iso-2022-jp', Encoding::CP50220)
+    add_charset_alias('iso-2022-jp', Encoding::CP50221)
+    add_charset_alias('shift_jis', Encoding::WINDOWS_31J)
+
     class Message
-      def initialize(msg_txt)
+      def initialize(msg_txt, charset_aliases: CHARSET_ALIAS_TABLE)
         @raw_source = msg_txt.dup.freeze
+        @charset_alias_table = charset_aliases
         @header = nil
         @body = nil
         @content_type = nil
@@ -591,11 +611,13 @@ module RIMS
             @body_text = body.raw_source.dup
           end
 
-          if (enc_name = charset) then
-            begin
-              enc = Encoding.find(enc_name)
-            rescue ArgumentError
-              raise EncodingError.new($!.to_s)
+          if (name = charset) then
+            unless (enc = @charset_alias_table[name.upcase]) then
+              begin
+                enc = Encoding.find(name)
+              rescue ArgumentError
+                raise EncodingError.new($!.to_s)
+              end
             end
             @body_text.force_encoding(enc)
             @body_text.valid_encoding? or raise EncodingError, "message body text with invalid encoding - #{enc}"

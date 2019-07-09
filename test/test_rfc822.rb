@@ -901,6 +901,23 @@ Content-Type: application/octet-stream
       assert_equal(Encoding::UTF_8, @msg.body_text.encoding)
       assert_equal("\u3053\u3093\u306B\u3061\u306F\r\n", @msg.body_text)
     end
+
+    data('euc-jp'      => 'euc-jp',
+         'iso-2022-jp' => 'iso-2022-jp',
+         'shift_jis'   => 'Shift_JIS')
+    def test_body_text_charset_alias(data)
+      charset = data
+      replaced_encoding = RIMS::RFC822::CHARSET_ALIAS_TABLE[charset.upcase] or flunk
+
+      platform_dependent_character = "\u2460"
+      assert_raise(Encoding::UndefinedConversionError) { platform_dependent_character.encode(charset) }
+
+      setup_message(content_type: "text/plain; charset=#{charset}",
+                    body: platform_dependent_character.encode(replaced_encoding).b)
+
+      assert_equal(replaced_encoding, @msg.body_text.encoding)
+      assert_equal(platform_dependent_character, @msg.body_text.encode('utf-8'))
+    end
   end
 end
 
