@@ -342,6 +342,7 @@ module RIMS
         @to = nil
         @cc = nil
         @bcc = nil
+        @body_text = nil
       end
 
       attr_reader :raw_source
@@ -577,6 +578,31 @@ module RIMS
 
       def bcc
         mail_address_header_field('bcc')
+      end
+
+      def body_text
+        unless (@body_text) then
+          case (header.fetch_upcase('Content-Transfer-Encoding'))
+          when 'BASE64'
+            @body_text = body.raw_source.unpack1('m')
+          when 'QUOTED-PRINTABLE'
+            @body_text = body.raw_source.unpack1('M')
+          else
+            @body_text = body.raw_source.dup
+          end
+
+          if (enc_name = charset) then
+            begin
+              enc = Encoding.find(enc_name)
+            rescue ArgumentError
+              raise EncodingError.new($!.to_s)
+            end
+            @body_text.force_encoding(enc)
+            @body_text.valid_encoding? or raise EncodingError, "message body text with invalid encoding - #{enc}"
+          end
+        end
+
+        @body_text
       end
     end
   end
