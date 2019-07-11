@@ -52,7 +52,7 @@ p msg.content_disposition_parameter(name)
 p msg.content_disposition_parameter_list
 p msg.content_language
 
-# headear attributes
+# header attributes
 p msg.date
 p msg.from
 p msg.sender

@@ -443,7 +443,7 @@ baz
     end
   end
 
-  class RFC822HeaderText < Test::Unit::TestCase
+  class RFC822HeaderTest < Test::Unit::TestCase
     def setup
       @header = RIMS::RFC822::Header.new("foo: apple\r\n" +
                                          "bar: Bob\r\n" +
