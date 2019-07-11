@@ -363,6 +363,89 @@ module RIMS
         text.freeze
       end
       module_function :get_mime_charset_text
+
+      ENCODED_WORD_TRANSFER_ENCODING_TABLE = { # :nodoc:
+        'B' => 'BASE64',
+        'Q' => 'QUOTED-PRINTABLE'
+      }.freeze
+
+      def decode_mime_encoded_words(encoded_string, decode_charset=nil, charset_aliases: DEFAULT_CHARSET_ALIASES, charset_convert_options: {})
+        src = encoded_string
+        dst = ''.dup
+
+        if (decode_charset) then
+          if (decode_charset.is_a? Encoding) then
+            decode_charset_encoding = decode_charset
+          else
+            decode_charset_encoding = charset_aliases[decode_charset] ||
+                                      Encoding.find(decode_charset) # raise `ArgumentError' when wrong charset due to library user
+          end
+          dst.force_encoding(decode_charset_encoding)
+        else
+          dst.force_encoding(encoded_string.encoding)
+        end
+
+        while (src =~ %r{
+                 =\? [^\s?]+ \? [BQ] \? [^\s?]+ \?=
+                 (?:
+                   \s+
+                   =\? [^\s?]+ \? [BQ] \? [^\s?]+ \?=
+                 )*
+               }ix)
+
+          src = $'
+          foreword = $`
+          encoded_word_list = $&.split(/\s+/, -1)
+
+          unless (foreword.empty?) then
+            if (dst.encoding.dummy?) then
+              # run the slow `String#encode' only when really needed
+              # because of a premise that the strings other than
+              # encoded words are ASCII only.
+              foreword.encode!(decode_charset_encoding, charset_convert_options)
+            end
+            dst << foreword
+          end
+
+          for encoded_word in encoded_word_list
+            _, charset, encoding, encoded_text, _ = encoded_word.split('?', 5)
+            encoding.upcase!
+            encoded_text.tr!('_', ' ') if (encoding == 'Q')
+            transfer_encoding = ENCODED_WORD_TRANSFER_ENCODING_TABLE[encoding] or raise "internal error - unknown encoding: #{encoding}"
+            decoded_text = get_mime_charset_text(encoded_text, charset, transfer_encoding, charset_aliases: charset_aliases)
+
+            if (decode_charset_encoding) then
+              if (decoded_text.encoding != decode_charset_encoding) then
+                # `decoded_text' is frozen
+                decoded_text = decoded_text.encode(decode_charset_encoding, charset_convert_options)
+              end
+            elsif (dst.ascii_only?) then
+              if (decoded_text.encoding.dummy?) then
+                dst.encode!(decoded_text.encoding, charset_convert_options)
+              end
+            else
+              if (decoded_text.encoding != dst.encoding) then
+                # `decoded_text' is frozen
+                decoded_text = decoded_text.encode(dst.encoding, charset_convert_options)
+              end
+            end
+            dst << decoded_text
+          end
+        end
+
+        unless (src.empty?) then
+          if (dst.encoding.dummy?) then
+            # run the slow `String#encode' only when really needed
+            # because of a premise that the strings other than encoded
+            # words are ASCII only.
+            src = src.encode(dst.encoding, charset_convert_options) # `src' may be frozen
+          end
+          dst << src
+        end
+
+        dst.freeze
+      end
+      module_function :decode_mime_encoded_words
     end
 
     class Header

@@ -613,6 +613,107 @@ baz
       assert_equal(replaced_encoding, text.encoding)
       assert_equal(platform_dependent_character, text.encode('utf-8'))
     end
+
+    iso_2022_jp_alias = RIMS::RFC822::DEFAULT_CHARSET_ALIASES['iso-2022-jp']
+    no_aliases = RIMS::RFC822::CharsetAliases.new
+    data('empty' => [
+           ''.b,
+           ''
+         ],
+         'plain_text' => [
+           'Hello world.'.b,
+           'Hello world.'
+         ],
+         'B-encoding' => [
+           "\u3053\u3093\u306B\u3061\u306F".encode(iso_2022_jp_alias),
+           '=?ISO-2022-JP?B?GyRCJDMkcyRLJEEkTxsoQg==?='
+         ],
+         'B-encoding:ignore_case' => [
+           "\u3053\u3093\u306B\u3061\u306F".encode(iso_2022_jp_alias),
+           '=?iso-2022-jp?b?GyRCJDMkcyRLJEEkTxsoQg==?='
+         ],
+         'Q-encoding' => [
+           "Hello \u3053\u3093\u306B\u3061\u306F",
+           '=?UTF-8?Q?Hello_=E3=81=93=E3=82=93=E3=81=AB=E3=81=A1=E3=81=AF?='
+         ],
+         'Q-encoding:ignore_case' => [
+           "Hello \u3053\u3093\u306B\u3061\u306F",
+           '=?utf-8?q?Hello_=E3=81=93=E3=82=93=E3=81=AB=E3=81=A1=E3=81=AF?='
+         ],
+         'encoded_word_with_plain_text' => [
+           "Hello \u3053\u3093\u306B\u3061\u306F world.",
+           "Hello =?UTF-8?B?44GT44KT44Gr44Gh44Gv?= world."
+         ],
+         'encoded_word_with_plain_text:dummy_encoding' => [
+           "Hello \u3053\u3093\u306B\u3061\u306F world.".encode(iso_2022_jp_alias),
+           "Hello =?ISO-2022-JP?B?GyRCJDMkcyRLJEEkTxsoQg==?= world."
+         ],
+         'ignore_white_space_between_encoded_words' => [
+           "Hello \u3053\u3093\u306B\u3061\u306F world.",
+           "Hello =?UTF-8?Q?=E3=81=93=E3=82=93?= \r\n    =?UTF-8?Q?=E3=81=AB=E3=81=A1=E3=81=AF?= world."
+         ],
+         'ignore_white_space_between_encoded_words:dummy_encoding' => [
+           [ 'Hello ', "\u3053\u3093", "\u306B\u3061\u306F", ' world.' ].map{|s| s.encode(iso_2022_jp_alias) }.join(''),
+           "Hello =?ISO-2022-JP?B?GyRCJDMkcxsoQg==?= \r\n    =?ISO-2022-JP?B?GyRCJEskQSRPGyhC?= world."
+         ],
+         'multi_charset_encoded_words' => [
+           "Hello \u3053\u3093\u306B\u3061\u306F world.",
+           "Hello =?UTF-8?Q?=E3=81=93=E3=82=93?= =?ISO-2022-JP?B?GyRCJEskQSRPGyhC?= world."
+         ],
+         'multi_charset_encoded_words:dummy_encoding' => [
+           [ 'Hello ', "\u3053\u3093", "\u306B\u3061\u306F", ' world.' ].map{|s| s.encode(iso_2022_jp_alias) }.join(''),
+           "Hello =?ISO-2022-JP?B?GyRCJDMkcxsoQg==?= =?UTF-8?Q?=E3=81=AB=E3=81=A1=E3=81=AF?= world."
+         ],
+         'decode_charset' => [
+           "Hello \u3053\u3093\u306B\u3061\u306F world.",
+           "Hello =?ISO-2022-JP?B?GyRCJDMkcxsoQg==?= =?ISO-2022-JP?B?GyRCJEskQSRPGyhC?= world.", 'utf-8'
+         ],
+         'decode_charset:encoding_object' => [
+           "Hello \u3053\u3093\u306B\u3061\u306F world.",
+           "Hello =?ISO-2022-JP?B?GyRCJDMkcxsoQg==?= =?ISO-2022-JP?B?GyRCJEskQSRPGyhC?= world.", Encoding::UTF_8
+         ],
+         'decode_charset:alias_charset' => [
+           "Hello \u3053\u3093\u306B\u3061\u306F world.".encode(iso_2022_jp_alias),
+           "Hello =?UTF-8?B?44GT44KT44Gr44Gh44Gv?= world.", 'iso-2022-jp'
+         ],
+         'decode_charset:no_conversion' => [
+           "Hello \u3053\u3093\u306B\u3061\u306F world.",
+           "Hello =?UTF-8?Q?=E3=81=93=E3=82=93?= =?UTF-8?Q?=E3=81=AB=E3=81=A1=E3=81=AF?= world.", 'utf-8'
+         ],
+         'decode_charset:plain_text' => [
+           'Hello world.',
+           'Hello world.', 'utf-8'
+         ],
+         'decode_charset:plain_text_dummy_encoding' => [
+           'Hello world.'.encode(iso_2022_jp_alias),
+           'Hello world.', 'iso-2022-jp'
+         ],
+         'charset_convert_options' => [
+           "A ? B".encode('iso-2022-jp'),
+           "A =?UTF-8?B?4pGg?= B", 'iso-2022-jp', charset_aliases: no_aliases, charset_convert_options: { undef: :replace }
+         ])
+    def test_decode_mime_encoded_words(data)
+      expected_text, encoded_string, *optional = data
+      text = RIMS::RFC822::CharsetText.decode_mime_encoded_words(encoded_string.b.freeze, *optional)
+      assert_equal(expected_text.encoding, text.encoding)
+      assert_equal(expected_text, text)
+    end
+
+    def test_decode_mime_encoded_words_unknown_decode_charset_error
+      error = assert_raise(ArgumentError) {
+        RIMS::RFC822::CharsetText.decode_mime_encoded_words('Hello world.'.b.freeze, 'x-nothing')
+      }
+      assert_match(/unknown/, error.message)
+      assert_match(/x-nothing/, error.message)
+    end
+
+    def test_decode_mime_encoded_words_invalid_encding_error
+      error = assert_raise(EncodingError) {
+        RIMS::RFC822::CharsetText.decode_mime_encoded_words('=?UTF-8?B?pLOk86TLpMGkzw==?='.b.freeze)
+      }
+      assert_match(/invalid encoding/, error.message)
+      assert_match(/#{Regexp.quote(Encoding::UTF_8.to_s)}/, error.message)
+    end
   end
 
   class RFC822HeaderTest < Test::Unit::TestCase
