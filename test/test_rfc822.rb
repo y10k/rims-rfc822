@@ -443,6 +443,83 @@ baz
     end
   end
 
+  class RFC822CharsetTextTest < Test::Unit::TestCase
+    data('no_charset' => [ "Hello world.\r\n".b, "Hello world.\r\n" ],
+         'utf-8' => [
+           "\u3053\u3093\u306B\u3061\u306F\r\n",
+           "\u3053\u3093\u306B\u3061\u306F\r\n", 'utf-8'
+         ],
+         'utf-8:ignore_case' => [
+           "\u3053\u3093\u306B\u3061\u306F\r\n",
+           "\u3053\u3093\u306B\u3061\u306F\r\n", 'UTF-8'
+         ],
+         'utf-8:encoding' => [
+           "\u3053\u3093\u306B\u3061\u306F\r\n",
+           "\u3053\u3093\u306B\u3061\u306F\r\n", Encoding::UTF_8
+         ],
+         'base64' => [
+           "\u3053\u3093\u306B\u3061\u306F\r\n",
+           "44GT44KT44Gr44Gh44GvDQo=\n", 'utf-8', 'base64'
+         ],
+         'base64:ignore_case' => [
+           "\u3053\u3093\u306B\u3061\u306F\r\n",
+           "44GT44KT44Gr44Gh44GvDQo=\n", 'utf-8', 'BASE64'
+         ],
+         'base64:ignore_invalid_encoding' => [
+           '',
+           "\u3053\u3093\u306B\u3061\u306F\r\n", 'utf-8', 'base64'
+         ],
+         'quoted-printable' => [
+           "\u3053\u3093\u306B\u3061\u306F\r\n",
+           "=E3=81=93=E3=82=93=E3=81=AB=E3=81=A1=E3=81=AF\r\n", 'utf-8', 'quoted-printable'
+         ],
+         'quoted-printable:ignore_case' => [
+           "\u3053\u3093\u306B\u3061\u306F\r\n",
+           "=E3=81=93=E3=82=93=E3=81=AB=E3=81=A1=E3=81=AF\r\n", 'utf-8', 'QUOTED-PRINTABLE'
+         ],
+         'quoted-printable:ignore_invalid_encoding' => [
+           "\u3053\u3093\u306B\u3061\u306F\r\n",
+           "\u3053\u3093\u306B\u3061\u306F\r\n", 'utf-8', 'quoted-printable'
+         ])
+    def test_get_mime_charset_text(data)
+      expected_text, binary_string, charset, transfer_encoding = data
+      text = RIMS::RFC822::CharsetText.get_mime_charset_text(binary_string.b.freeze, charset, transfer_encoding)
+      assert_equal(expected_text.encoding, text.encoding)
+      assert_equal(expected_text, text)
+    end
+
+    def test_get_mime_charset_text_unknown_charset_error
+      error = assert_raise(EncodingError) {
+        RIMS::RFC822::CharsetText.get_mime_charset_text("Hello world.\r\n".b.freeze, 'x-nothing')
+      }
+      assert_match(/unknown/, error.message)
+      assert_match(/x-nothing/, error.message)
+    end
+
+    def test_get_mime_charset_text_invalid_encoding_error
+      error = assert_raise(EncodingError) {
+        RIMS::RFC822::CharsetText.get_mime_charset_text("\xA4\xB3\xA4\xF3\xA4\xCB\xA4\xC1\xA4\xCF\r\n".b.freeze, 'utf-8')
+      }
+      assert_match(/invalid encoding/, error.message)
+      assert_match(/#{Regexp.quote(Encoding::UTF_8.to_s)}/, error.message)
+    end
+
+    data('euc-jp'      => 'euc-jp',
+         'iso-2022-jp' => 'iso-2022-jp',
+         'shift_jis'   => 'Shift_JIS')
+    def test_get_mime_charset_text_charset_alias(data)
+      charset = data
+      replaced_encoding = RIMS::RFC822::CharsetText::CHARSET_ALIAS_TABLE[charset.upcase] or flunk
+
+      platform_dependent_character = "\u2460"
+      assert_raise(Encoding::UndefinedConversionError) { platform_dependent_character.encode(charset) }
+
+      text = RIMS::RFC822::CharsetText.get_mime_charset_text(platform_dependent_character.encode(replaced_encoding).b.freeze, charset)
+      assert_equal(replaced_encoding, text.encoding)
+      assert_equal(platform_dependent_character, text.encode('utf-8'))
+    end
+  end
+
   class RFC822HeaderTest < Test::Unit::TestCase
     def setup
       @header = RIMS::RFC822::Header.new("foo: apple\r\n" +
@@ -907,7 +984,7 @@ Content-Type: application/octet-stream
          'shift_jis'   => 'Shift_JIS')
     def test_body_text_charset_alias(data)
       charset = data
-      replaced_encoding = RIMS::RFC822::CHARSET_ALIAS_TABLE[charset.upcase] or flunk
+      replaced_encoding = RIMS::RFC822::CharsetText::CHARSET_ALIAS_TABLE[charset.upcase] or flunk
 
       platform_dependent_character = "\u2460"
       assert_raise(Encoding::UndefinedConversionError) { platform_dependent_character.encode(charset) }

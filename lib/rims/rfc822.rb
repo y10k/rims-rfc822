@@ -267,6 +267,61 @@ module RIMS
     module_function :parse_multipart_body
     module_function :parse_mail_address_list
 
+    module CharsetText
+      CHARSET_ALIAS_TABLE = {}
+
+      def add_charset_alias(name, encoding, charset_aliases: CHARSET_ALIAS_TABLE)
+        charset_aliases[name.upcase] = encoding
+        charset_aliases
+      end
+      module_function :add_charset_alias
+
+      def delete_charset_alias(name, charset_aliases: CHARSET_ALIAS_TABLE)
+        charset_aliases.delete(name.upcase)
+      end
+      module_function :delete_charset_alias
+
+      def self.find_string_encoding(name)
+        begin
+          Encoding.find(name)
+        rescue ArgumentError
+          raise EncodingError.new($!.to_s)
+        end
+      end
+
+      def get_mime_charset_text(binary_string, charset, transfer_encoding=nil, charset_aliases: CHARSET_ALIAS_TABLE)
+        case (transfer_encoding&.upcase)
+        when 'BASE64'
+          text = binary_string.unpack1('m')
+        when 'QUOTED-PRINTABLE'
+          text = binary_string.unpack1('M')
+        else
+          text = binary_string.dup
+        end
+
+        if (charset) then
+          if (charset.is_a? Encoding) then
+            enc = charset
+          else
+            enc = charset_aliases[charset.upcase] ||
+                  CharsetText.find_string_encoding(charset) # raise `EncodingError' when wrong charset due to document
+          end
+          text.force_encoding(enc)
+          text.valid_encoding? or raise EncodingError, "invalid encoding - #{enc}"
+        end
+
+        text.freeze
+      end
+      module_function :get_mime_charset_text
+    end
+
+    # default charset aliases
+    #CharsetText.add_charset_alias('euc-jp', Encoding::CP51932)
+    CharsetText.add_charset_alias('euc-jp', Encoding::EUCJP_MS)
+    #CharsetText.add_charset_alias('iso-2022-jp', Encoding::CP50220)
+    CharsetText.add_charset_alias('iso-2022-jp', Encoding::CP50221)
+    CharsetText.add_charset_alias('shift_jis', Encoding::WINDOWS_31J)
+
     class Header
       include Enumerable
 
@@ -340,27 +395,8 @@ module RIMS
       attr_reader :raw_source
     end
 
-    CHARSET_ALIAS_TABLE = {}    # :nodoc:
-
-    def add_charset_alias(name, encoding, charset_alias_table=CHARSET_ALIAS_TABLE)
-      charset_alias_table[name.upcase] = encoding
-      charset_alias_table
-    end
-    module_function :add_charset_alias
-
-    def delete_charset_alias(name, charset_alias_table=CHARSET_ALIAS_TABLE)
-      charset_alias_table.delete(name.upcase)
-    end
-    module_function :delete_charset_alias
-
-    #add_charset_alias('euc-jp', Encoding::CP51932)
-    add_charset_alias('euc-jp', Encoding::EUCJP_MS)
-    #add_charset_alias('iso-2022-jp', Encoding::CP50220)
-    add_charset_alias('iso-2022-jp', Encoding::CP50221)
-    add_charset_alias('shift_jis', Encoding::WINDOWS_31J)
-
     class Message
-      def initialize(msg_txt, charset_aliases: CHARSET_ALIAS_TABLE)
+      def initialize(msg_txt, charset_aliases: CharsetText::CHARSET_ALIAS_TABLE)
         @raw_source = msg_txt.dup.freeze
         @charset_alias_table = charset_aliases
         @header = nil
@@ -616,30 +652,10 @@ module RIMS
       end
 
       def body_text
-        unless (@body_text) then
-          case (header.fetch_upcase('Content-Transfer-Encoding'))
-          when 'BASE64'
-            @body_text = body.raw_source.unpack1('m')
-          when 'QUOTED-PRINTABLE'
-            @body_text = body.raw_source.unpack1('M')
-          else
-            @body_text = body.raw_source.dup
-          end
-
-          if (name = charset) then
-            unless (enc = @charset_alias_table[name.upcase]) then
-              begin
-                enc = Encoding.find(name)
-              rescue ArgumentError
-                raise EncodingError.new($!.to_s)
-              end
-            end
-            @body_text.force_encoding(enc)
-            @body_text.valid_encoding? or raise EncodingError, "message body text with invalid encoding - #{enc}"
-          end
-        end
-
-        @body_text
+        @body_text ||= CharsetText.get_mime_charset_text(body.raw_source,
+                                                         charset,
+                                                         header['Content-Transfer-Encoding'],
+                                                         charset_aliases: @charset_alias_table)
       end
     end
   end
