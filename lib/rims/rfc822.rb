@@ -5,251 +5,266 @@ require 'time'
 
 module RIMS
   module RFC822
-    def split_message(msg_txt)
-      header_txt, body_txt = msg_txt.lstrip.split(/\r?\n\r?\n/, 2)
-      if ($&) then
-        header_txt << $& if $&
-      else
-        body_txt = header_txt
-        header_txt = nil
-      end
-
-      [ header_txt.freeze, body_txt.freeze ].freeze
-    end
-    module_function :split_message
-
-    def parse_header(header_txt)
-      field_pair_list = header_txt.scan(%r{
-        ^
-        ((?#name) \S+? )
-        \s* : \s*
-        (
-           (?#value)
-           .*? (?: \n|\z)
-           (?: ^\s .*? (?: \n|\z) )*
-        )
-      }x)
-
-      for name, value in field_pair_list
-        value.strip!
-        name.freeze
-        value.freeze
-      end
-
-      field_pair_list.freeze
-    end
-    module_function :parse_header
-
-    def unquote_phrase(phrase_txt)
-      state = :raw
-      src_txt = phrase_txt.dup
-      dst_txt = ''.encode(phrase_txt.encoding)
-
-      while (src_txt.sub!(/\A (?: " | \( | \) | \\ | [^"\(\)\\]+ )/x, ''))
-        match_txt = $&
-        case (state)
-        when :raw
-          case (match_txt)
-          when '"'
-            state = :quote
-          when '('
-            state = :comment
-          when "\\"
-            src_txt.sub!(/\A./, '') and dst_txt << $&
-          else
-            dst_txt << match_txt
-          end
-        when :quote
-          case (match_txt)
-          when '"'
-            state = :raw
-          when "\\"
-            src_txt.sub!(/\A./, '') && dst_txt << $&
-          else
-            dst_txt << match_txt
-          end
-        when :comment
-          case (match_txt)
-          when ')'
-            state = :raw
-          when "\\"
-            src_txt.sub!(/\A./, '')
-          else
-            # ignore comment text.
-          end
+    module Parse
+      def split_message(msg_txt)
+        header_txt, body_txt = msg_txt.lstrip.split(/\r?\n\r?\n/, 2)
+        if ($&) then
+          header_txt << $& if $&
         else
-          raise "internal error: unknown state #{state}"
+          body_txt = header_txt
+          header_txt = nil
+        end
+
+        [ header_txt.freeze, body_txt.freeze ].freeze
+      end
+      module_function :split_message
+
+      def parse_header(header_txt)
+        field_pair_list = header_txt.scan(%r{
+          ^
+          ((?#name) \S+? )
+          \s* : \s*
+          (
+             (?#value)
+             .*? (?: \n|\z)
+             (?: ^\s .*? (?: \n|\z) )*
+          )
+        }x)
+
+        for name, value in field_pair_list
+          value.strip!
+          name.freeze
+          value.freeze
+        end
+
+        field_pair_list.freeze
+      end
+      module_function :parse_header
+
+      def unquote_phrase(phrase_txt)
+        state = :raw
+        src_txt = phrase_txt.dup
+        dst_txt = ''.encode(phrase_txt.encoding)
+
+        while (src_txt.sub!(/\A (?: " | \( | \) | \\ | [^"\(\)\\]+ )/x, ''))
+          match_txt = $&
+          case (state)
+          when :raw
+            case (match_txt)
+            when '"'
+              state = :quote
+            when '('
+              state = :comment
+            when "\\"
+              src_txt.sub!(/\A./, '') and dst_txt << $&
+            else
+              dst_txt << match_txt
+            end
+          when :quote
+            case (match_txt)
+            when '"'
+              state = :raw
+            when "\\"
+              src_txt.sub!(/\A./, '') && dst_txt << $&
+            else
+              dst_txt << match_txt
+            end
+          when :comment
+            case (match_txt)
+            when ')'
+              state = :raw
+            when "\\"
+              src_txt.sub!(/\A./, '')
+            else
+              # ignore comment text.
+            end
+          else
+            raise "internal error: unknown state #{state}"
+          end
+        end
+
+        dst_txt.freeze
+      end
+      module_function :unquote_phrase
+
+      def parse_parameters(parameters_txt)
+        params = {}
+        parameters_txt.scan(%r'(?<name>\S+?) \s* = \s* (?: (?<quoted_string>".*?") | (?<token>\S+?) ) \s* (?:;|\Z)'x) do
+          name = $~[:name]
+          if ($~[:quoted_string]) then
+            quoted_value = $~[:quoted_string]
+            value = unquote_phrase(quoted_value)
+          else
+            value = $~[:token]
+          end
+          params[name.downcase.freeze] = [ name.freeze, value.freeze ].freeze
+        end
+
+        params.freeze
+      end
+      module_function :parse_parameters
+
+      def split_parameters(type_params_txt)
+        type, params_txt = type_params_txt.split(';', 2)
+        if (type) then
+          type.strip!
+          type.freeze
+          if (params_txt) then
+            params = parse_parameters(params_txt)
+          else
+            params = {}.freeze
+          end
+          [ type, params ].freeze
+        else
+          [ nil, {}.freeze ].freeze
         end
       end
+      module_function :split_parameters
 
-      dst_txt.freeze
-    end
-    module_function :unquote_phrase
-
-    def parse_parameters(parameters_txt)
-      params = {}
-      parameters_txt.scan(%r'(?<name>\S+?) \s* = \s* (?: (?<quoted_string>".*?") | (?<token>\S+?) ) \s* (?:;|\Z)'x) do
-        name = $~[:name]
-        if ($~[:quoted_string]) then
-          quoted_value = $~[:quoted_string]
-          value = unquote_phrase(quoted_value)
-        else
-          value = $~[:token]
-        end
-        params[name.downcase.freeze] = [ name.freeze, value.freeze ].freeze
-      end
-
-      params.freeze
-    end
-    module_function :parse_parameters
-
-    def split_parameters(type_params_txt)
-      type, params_txt = type_params_txt.split(';', 2)
-      if (type) then
-        type.strip!
-        type.freeze
-        if (params_txt) then
-          params = parse_parameters(params_txt)
-        else
-          params = {}.freeze
-        end
-        [ type, params ].freeze
-      else
-        [ nil, {}.freeze ].freeze
-      end
-    end
-    module_function :split_parameters
-
-    def parse_content_type(type_txt)
-      media_type_txt, params = split_parameters(type_txt)
-      if (media_type_txt) then
-        main_type, sub_type = media_type_txt.split('/', 2)
-        if (main_type) then
-          main_type.strip!
-          main_type.freeze
-          if (sub_type) then
-            sub_type.strip!
-            sub_type.freeze
-            if (! main_type.empty? && ! sub_type.empty?) then
-              return [ main_type, sub_type, params ].freeze
+      def parse_content_type(type_txt)
+        media_type_txt, params = split_parameters(type_txt)
+        if (media_type_txt) then
+          main_type, sub_type = media_type_txt.split('/', 2)
+          if (main_type) then
+            main_type.strip!
+            main_type.freeze
+            if (sub_type) then
+              sub_type.strip!
+              sub_type.freeze
+              if (! main_type.empty? && ! sub_type.empty?) then
+                return [ main_type, sub_type, params ].freeze
+              end
             end
           end
         end
+
+        [ 'application'.dup.force_encoding(type_txt.encoding).freeze,
+          'octet-stream'.dup.force_encoding(type_txt.encoding).freeze,
+          params
+        ].freeze
       end
+      module_function :parse_content_type
 
-      [ 'application'.dup.force_encoding(type_txt.encoding).freeze,
-        'octet-stream'.dup.force_encoding(type_txt.encoding).freeze,
-        params
-      ].freeze
-    end
-    module_function :parse_content_type
-
-    def parse_content_disposition(disposition_txt)
-      split_parameters(disposition_txt)
-    end
-    module_function :parse_content_disposition
-
-    def parse_content_language(language_tags_txt)
-      tag_list = language_tags_txt.split(',')
-      for tag in tag_list
-        tag.strip!
-        tag.freeze
+      def parse_content_disposition(disposition_txt)
+        split_parameters(disposition_txt)
       end
-      tag_list.reject!(&:empty?)
+      module_function :parse_content_disposition
 
-      tag_list.freeze
-    end
-    module_function :parse_content_language
-
-    def parse_multipart_body(boundary, body_txt)
-      delim = '--' + boundary
-      term = delim + '--'
-      body_txt2, _body_epilogue_txt = body_txt.split(term, 2)
-      if (body_txt2) then
-        _body_preamble_txt, body_parts_txt = body_txt2.split(delim, 2)
-        if (body_parts_txt) then
-          part_list = body_parts_txt.split(delim, -1)
-          for part_txt in part_list
-            part_txt.lstrip!
-            part_txt.chomp!("\n")
-            part_txt.chomp!("\r")
-            part_txt.freeze
-          end
-          return part_list.freeze
+      def parse_content_language(language_tags_txt)
+        tag_list = language_tags_txt.split(',')
+        for tag in tag_list
+          tag.strip!
+          tag.freeze
         end
+        tag_list.reject!(&:empty?)
+
+        tag_list.freeze
+      end
+      module_function :parse_content_language
+
+      def parse_multipart_body(boundary, body_txt)
+        delim = '--' + boundary
+        term = delim + '--'
+        body_txt2, _body_epilogue_txt = body_txt.split(term, 2)
+        if (body_txt2) then
+          _body_preamble_txt, body_parts_txt = body_txt2.split(delim, 2)
+          if (body_parts_txt) then
+            part_list = body_parts_txt.split(delim, -1)
+            for part_txt in part_list
+              part_txt.lstrip!
+              part_txt.chomp!("\n")
+              part_txt.chomp!("\r")
+              part_txt.freeze
+            end
+            return part_list.freeze
+          end
+        end
+
+        [].freeze
+      end
+      module_function :parse_multipart_body
+
+      Address = Struct.new(:display_name, :route, :local_part, :domain)
+      class Address
+        # compatible for Net::MAP::Address
+        alias name display_name
+        alias mailbox local_part
+        alias host domain
       end
 
-      [].freeze
-    end
-    module_function :parse_multipart_body
+      def parse_mail_address_list(address_list_txt)
+        addr_list = []
+        src_txt = address_list_txt.dup
 
-    Address = Struct.new(:display_name, :route, :local_part, :domain)
-    class Address
-      # compatible for Net::MAP::Address
-      alias name display_name
-      alias mailbox local_part
-      alias host domain
-    end
-
-    def parse_mail_address_list(address_list_txt)
-      addr_list = []
-      src_txt = address_list_txt.dup
-
-      while (true)
-        if (src_txt.sub!(%r{
-              \A
-              \s*
-              (?<display_name>\S.*?) \s* : (?<group_list>.*?) ;
-              \s*
-              ,?
-            }x, ''))
-        then
-          display_name = $~[:display_name]
-          group_list = $~[:group_list]
-          addr_list << Address.new( nil, nil, unquote_phrase(display_name), nil).freeze
-          addr_list.concat(parse_mail_address_list(group_list))
-          addr_list << Address.new(nil, nil, nil, nil).freeze
-        elsif (src_txt.sub!(%r{
-                 \A
-                 \s*
-                 (?<local_part>[^<>@",\s]+) \s* @ \s* (?<domain>[^<>@",\s]+)
-                 \s*
-                 ,?
-               }x, ''))
-        then
-          addr_list << Address.new(nil, nil, $~[:local_part].freeze, $~[:domain].freeze).freeze
-        elsif (src_txt.sub!(%r{
-                 \A
-                 \s*
-                 (?<display_name>\S.*?)
-                 \s*
-                 <
-                   \s*
-                   (?:
-                     (?<route>@[^<>@",]* (?:, \s* @[^<>@",]*)*)
-                     \s*
-                     :
-                   )?
+        while (true)
+          if (src_txt.sub!(%r{
+                \A
+                \s*
+                (?<display_name>\S.*?) \s* : (?<group_list>.*?) ;
+                \s*
+                ,?
+              }x, ''))
+          then
+            display_name = $~[:display_name]
+            group_list = $~[:group_list]
+            addr_list << Address.new( nil, nil, unquote_phrase(display_name), nil).freeze
+            addr_list.concat(parse_mail_address_list(group_list))
+            addr_list << Address.new(nil, nil, nil, nil).freeze
+          elsif (src_txt.sub!(%r{
+                   \A
                    \s*
                    (?<local_part>[^<>@",\s]+) \s* @ \s* (?<domain>[^<>@",\s]+)
                    \s*
-                 >
-                 \s*
-                 ,?
-               }x, ''))
-        then
-          display_name = $~[:display_name]
-          route = $~[:route]
-          local_part = $~[:local_part]
-          domain = $~[:domain]
-          addr_list << Address.new(unquote_phrase(display_name), route.freeze, local_part.freeze, domain.freeze).freeze
-        else
-          break
+                   ,?
+                 }x, ''))
+          then
+            addr_list << Address.new(nil, nil, $~[:local_part].freeze, $~[:domain].freeze).freeze
+          elsif (src_txt.sub!(%r{
+                   \A
+                   \s*
+                   (?<display_name>\S.*?)
+                   \s*
+                   <
+                     \s*
+                     (?:
+                       (?<route>@[^<>@",]* (?:, \s* @[^<>@",]*)*)
+                       \s*
+                       :
+                     )?
+                     \s*
+                     (?<local_part>[^<>@",\s]+) \s* @ \s* (?<domain>[^<>@",\s]+)
+                     \s*
+                   >
+                   \s*
+                   ,?
+                 }x, ''))
+          then
+            display_name = $~[:display_name]
+            route = $~[:route]
+            local_part = $~[:local_part]
+            domain = $~[:domain]
+            addr_list << Address.new(unquote_phrase(display_name), route.freeze, local_part.freeze, domain.freeze).freeze
+          else
+            break
+          end
         end
-      end
 
-      addr_list.freeze
+        addr_list.freeze
+      end
+      module_function :parse_mail_address_list
     end
+
+    # for backward compatibility
+    include Parse
+    module_function :split_message
+    module_function :parse_header
+    module_function :unquote_phrase
+    module_function :parse_parameters
+    module_function :split_parameters
+    module_function :parse_content_type
+    module_function :parse_content_disposition
+    module_function :parse_content_language
+    module_function :parse_multipart_body
     module_function :parse_mail_address_list
 
     class Header
@@ -265,7 +280,7 @@ module RIMS
 
       def setup_header
         if (@field_list.nil? || @field_table.nil?) then
-          @field_list = RFC822.parse_header(@raw_source)
+          @field_list = Parse.parse_header(@raw_source)
           @field_table = {}
           for name, value in @field_list
             key = name.downcase
@@ -369,7 +384,7 @@ module RIMS
 
       def setup_message
         if (@header.nil? || @body.nil?) then
-          header_txt, body_txt = RFC822.split_message(@raw_source)
+          header_txt, body_txt = Parse.split_message(@raw_source)
           @header = Header.new(header_txt || '')
           @body = Body.new(body_txt || '')
           self
@@ -389,7 +404,7 @@ module RIMS
 
       def setup_content_type
         if (@content_type.nil?) then
-          @content_type = RFC822.parse_content_type(header['Content-Type'] || '')
+          @content_type = Parse.parse_content_type(header['Content-Type'] || '')
           self
         end
       end
@@ -452,7 +467,7 @@ module RIMS
       def setup_content_disposition
         if (header.key? 'Content-Disposition') then
           if (@content_disposition.nil?) then
-            @content_disposition = RFC822.parse_content_disposition(header['Content-Disposition'])
+            @content_disposition = Parse.parse_content_disposition(header['Content-Disposition'])
             self
           end
         end
@@ -489,7 +504,7 @@ module RIMS
       def setup_content_language
         if (header.key? 'Content-Language') then
           if (@content_language.nil?) then
-            @content_language = header.field_value_list('Content-Language').map{|tags_txt| RFC822.parse_content_language(tags_txt) }.inject(:+)
+            @content_language = header.field_value_list('Content-Language').map{|tags_txt| Parse.parse_content_language(tags_txt) }.inject(:+)
             @content_language.freeze
             self
           end
@@ -520,7 +535,7 @@ module RIMS
         if (multipart?) then
           if (@parts.nil?) then
             if (boundary = self.boundary) then
-              part_list = RFC822.parse_multipart_body(boundary, body.raw_source)
+              part_list = Parse.parse_multipart_body(boundary, body.raw_source)
               @parts = part_list.map{|msg_txt| Message.new(msg_txt) }
             else
               @parts = []
@@ -566,7 +581,7 @@ module RIMS
           ivar_name = '@' + field_name.downcase.gsub('-', '_')
           addr_list = instance_variable_get(ivar_name)
           if (addr_list.nil?) then
-            addr_list = header.field_value_list(field_name).map{|addr_list_txt| RFC822.parse_mail_address_list(addr_list_txt) }.inject(:+)
+            addr_list = header.field_value_list(field_name).map{|addr_list_txt| Parse.parse_mail_address_list(addr_list_txt) }.inject(:+)
             addr_list.freeze
             instance_variable_set(ivar_name, addr_list)
           end

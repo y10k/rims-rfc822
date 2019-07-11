@@ -5,7 +5,7 @@ require 'rims/rfc822'
 require 'test/unit'
 
 module RIMS::Test
-  class RFC822ParserTest < Test::Unit::TestCase
+  class RFC822ParseTest < Test::Unit::TestCase
     def assert_strenc_equal(expected_enc, expected_str, expr_str)
       assert_equal([ Encoding.find(expected_enc), expected_str.dup.force_encoding(expected_enc) ],
                    [ expr_str.encoding,           expr_str                                      ])
@@ -56,7 +56,7 @@ module RIMS::Test
          ])
     def test_split_message(data)
       message, expected_header, expected_body = data
-      header, body = RIMS::RFC822.split_message(message.b)
+      header, body = RIMS::RFC822::Parse.split_message(message.b)
 
       if (expected_header) then
         assert_strenc_equal('ascii-8bit', expected_header, header)
@@ -109,7 +109,7 @@ module RIMS::Test
          'ignore_too_many_field_dseparator' => [ 'foo:bar:baz', [ %w[ foo bar:baz ] ] ])
     def test_parse_header(data)
       header, expected_field_pair_list = data
-      field_pair_list = RIMS::RFC822.parse_header(header.b)
+      field_pair_list = RIMS::RFC822::Parse.parse_header(header.b)
 
       assert_equal(expected_field_pair_list.length, field_pair_list.length)
       expected_field_pair_list.zip(field_pair_list).zip do |expected_field_pair, field_pair|
@@ -137,7 +137,7 @@ module RIMS::Test
          'ignore_wrongs:escape_char_in_comment' => [ '(foo',                    ''              ])
     def test_unquote_phrase(data)
       quoted_phrase, expected_unquoted_phrase = data
-      assert_strenc_equal('ascii-8bit', expected_unquoted_phrase, RIMS::RFC822.unquote_phrase(quoted_phrase.b))
+      assert_strenc_equal('ascii-8bit', expected_unquoted_phrase, RIMS::RFC822::Parse.unquote_phrase(quoted_phrase.b))
     end
 
     data('empty' => [
@@ -192,7 +192,7 @@ module RIMS::Test
          ])
     def test_parse_parameters(data)
       parameters_txt, expected_params = data
-      params = RIMS::RFC822.parse_parameters(parameters_txt.b)
+      params = RIMS::RFC822::Parse.parse_parameters(parameters_txt.b)
 
       assert_equal(expected_params, params)
       for normalized_name, (name, value) in params
@@ -225,7 +225,7 @@ module RIMS::Test
          ])
     def test_parse_content_type(data)
       header_field, expected_content_type = data
-      content_type = RIMS::RFC822.parse_content_type(header_field.b)
+      content_type = RIMS::RFC822::Parse.parse_content_type(header_field.b)
       assert_equal(expected_content_type, content_type)
 
       main_type, sub_type, params = content_type
@@ -263,7 +263,7 @@ module RIMS::Test
          ])
     def test_parse_content_disposition(data)
       header_field, expected_content_disposition = data
-      content_disposition = RIMS::RFC822.parse_content_disposition(header_field.b)
+      content_disposition = RIMS::RFC822::Parse.parse_content_disposition(header_field.b)
       assert_equal(expected_content_disposition, content_disposition)
 
       type, params = content_disposition
@@ -283,7 +283,7 @@ module RIMS::Test
          'empty'         => [ '',           []        ])
     def test_parse_content_language(data)
       header_field, expected_tag_list = data
-      tag_list = RIMS::RFC822.parse_content_language(header_field.b)
+      tag_list = RIMS::RFC822::Parse.parse_content_language(header_field.b)
       assert_equal(expected_tag_list, tag_list)
 
       for tag in tag_list
@@ -314,7 +314,7 @@ Content-Transfer-Encoding: quoted-printable
 ------=_Part_1459890_1462677911.1383882437398--
       MULTIPART
 
-      part_list = RIMS::RFC822.parse_multipart_body('----=_Part_1459890_1462677911.1383882437398'.b, body_txt)
+      part_list = RIMS::RFC822::Parse.parse_multipart_body('----=_Part_1459890_1462677911.1383882437398'.b, body_txt)
       assert_equal(1, part_list.length)
       assert_strenc_equal('ascii-8bit', <<-'PART', part_list[0])
 Content-Type: multipart/alternative; 
@@ -335,11 +335,11 @@ Content-Transfer-Encoding: quoted-printable
 ------=_Part_1459891_982342968.1383882437398--
       PART
 
-      header_txt, body_txt = RIMS::RFC822.split_message(part_list[0])
-      type_txt = RIMS::RFC822.parse_header(header_txt).find{|n, v| n == 'Content-Type' }[1]
-      boundary = RIMS::RFC822.parse_content_type(type_txt)[2]['boundary'][1]
+      header_txt, body_txt = RIMS::RFC822::Parse.split_message(part_list[0])
+      type_txt = RIMS::RFC822::Parse.parse_header(header_txt).find{|n, v| n == 'Content-Type' }[1]
+      boundary = RIMS::RFC822::Parse.parse_content_type(type_txt)[2]['boundary'][1]
 
-      part_list = RIMS::RFC822.parse_multipart_body(boundary, body_txt)
+      part_list = RIMS::RFC822::Parse.parse_multipart_body(boundary, body_txt)
       assert_equal(2, part_list.length)
       assert_strenc_equal('ascii-8bit', <<-'PART1'.chomp, part_list[0])
 Content-Type: text/plain; charset=UTF-8
@@ -357,7 +357,7 @@ Content-Transfer-Encoding: quoted-printable
     end
 
     def test_parse_multipart_body_bad_format
-      assert_equal(%w[ foo bar baz ], RIMS::RFC822.parse_multipart_body('sep', <<-EOF))
+      assert_equal(%w[ foo bar baz ], RIMS::RFC822::Parse.parse_multipart_body('sep', <<-EOF))
 --sep
 foo
 --sep
@@ -366,12 +366,12 @@ bar
 baz
       EOF
 
-      assert_equal([], RIMS::RFC822.parse_multipart_body('sep', <<-EOF))
+      assert_equal([], RIMS::RFC822::Parse.parse_multipart_body('sep', <<-EOF))
 --sep--
       EOF
 
-      assert_equal([], RIMS::RFC822.parse_multipart_body('sep', 'detarame'))
-      assert_equal([], RIMS::RFC822.parse_multipart_body('sep', ''))
+      assert_equal([], RIMS::RFC822::Parse.parse_multipart_body('sep', 'detarame'))
+      assert_equal([], RIMS::RFC822::Parse.parse_multipart_body('sep', ''))
     end
 
     data('local_part@domain:empty' => [
@@ -430,7 +430,7 @@ baz
          ])
     def test_parse_mail_address_list(data)
       address_list_txt, expected_address_list = data
-      address_list = RIMS::RFC822.parse_mail_address_list(address_list_txt.b)
+      address_list = RIMS::RFC822::Parse.parse_mail_address_list(address_list_txt.b)
 
       assert_equal(expected_address_list, address_list)
       address_list.each_with_index do |addr, i|
