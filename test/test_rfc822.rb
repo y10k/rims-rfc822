@@ -600,7 +600,7 @@ baz
     def setup_message(headers={},
                       content_type: 'text/plain; charset=utf-8',
                       body: "Hello world.\r\n")
-      src = headers.map{|n, v| "#{n}: #{v}\r\n" }.join('').b
+      src = headers.map{|n, v| "#{n}: #{v}\r\n" }.join('')
       src << "Content-Type: #{content_type}\r\n" if content_type
       src << "Subject: test\r\n"
       src << "\r\n"
@@ -919,33 +919,11 @@ Content-Type: application/octet-stream
       assert_equal([], @msg.from)
     end
 
-    def test_body_text_no_charset
-      setup_message(content_type: 'text/plain',
-                    body: "Hello world.\r\n".b)
-      assert_equal(Encoding::ASCII_8BIT, @msg.body_text.encoding)
-      assert_equal("Hello world.\r\n", @msg.body_text)
-    end
-
     def test_body_text_utf8
       setup_message(content_type: 'text/plain; charset=utf-8',
                     body: "\u3053\u3093\u306B\u3061\u306F\r\n".b)
       assert_equal(Encoding::UTF_8, @msg.body_text.encoding)
       assert_equal("\u3053\u3093\u306B\u3061\u306F\r\n", @msg.body_text)
-    end
-
-    def test_body_text_unknown_charset_error
-      setup_message(content_type: 'text/plain; charset=x-nothing')
-      error = assert_raise(EncodingError) { @msg.body_text }
-      assert_match(/unknown/, error.message)
-      assert_match(/x-nothing/, error.message)
-    end
-
-    def test_body_text_invalid_encoding_error
-      setup_message(content_type: 'text/plain; charset=utf-8',
-                    body: "\xA4\xB3\xA4\xF3\xA4\xCB\xA4\xC1\xA4\xCF\r\n".b)
-      error = assert_raise(EncodingError) { @msg.body_text }
-      assert_match(/invalid encoding/, error.message)
-      assert_match(/#{Regexp.quote(Encoding::UTF_8.to_s)}/, error.message)
     end
 
     def test_body_text_base64
@@ -956,44 +934,12 @@ Content-Type: application/octet-stream
       assert_equal("\u3053\u3093\u306B\u3061\u306F\r\n", @msg.body_text)
     end
 
-    def test_body_text_base64_ignore_invalid_encoding
-      setup_message({ 'Content-Transfer-Encoding' => 'base64' },
-                    content_type: 'text/plain; charset=utf-8',
-                    body: "\xA4\xB3\xA4\xF3\xA4\xCB\xA4\xC1\xA4\xCF\r\n".b)
-      assert_equal('', @msg.body_text)
-    end
-
     def test_body_text_quoted_printable
       setup_message({ 'Content-Transfer-Encoding' => 'quoted-printable' },
                     content_type: 'text/plain; charset=utf-8',
                     body: "=E3=81=93=E3=82=93=E3=81=AB=E3=81=A1=E3=81=AF\r\n".b)
       assert_equal(Encoding::UTF_8, @msg.body_text.encoding)
       assert_equal("\u3053\u3093\u306B\u3061\u306F\r\n", @msg.body_text)
-    end
-
-    def test_body_text_quoted_printable_ignore_invalid_encoding
-      setup_message({ 'Content-Transfer-Encoding' => 'quoted-printable' },
-                    content_type: 'text/plain; charset=utf-8',
-                    body: "\u3053\u3093\u306B\u3061\u306F\r\n".b)
-      assert_equal(Encoding::UTF_8, @msg.body_text.encoding)
-      assert_equal("\u3053\u3093\u306B\u3061\u306F\r\n", @msg.body_text)
-    end
-
-    data('euc-jp'      => 'euc-jp',
-         'iso-2022-jp' => 'iso-2022-jp',
-         'shift_jis'   => 'Shift_JIS')
-    def test_body_text_charset_alias(data)
-      charset = data
-      replaced_encoding = RIMS::RFC822::CharsetText::CHARSET_ALIAS_TABLE[charset.upcase] or flunk
-
-      platform_dependent_character = "\u2460"
-      assert_raise(Encoding::UndefinedConversionError) { platform_dependent_character.encode(charset) }
-
-      setup_message(content_type: "text/plain; charset=#{charset}",
-                    body: platform_dependent_character.encode(replaced_encoding).b)
-
-      assert_equal(replaced_encoding, @msg.body_text.encoding)
-      assert_equal(platform_dependent_character, @msg.body_text.encode('utf-8'))
     end
   end
 end
