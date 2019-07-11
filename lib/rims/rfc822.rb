@@ -1,5 +1,6 @@
 # -*- coding: utf-8; frozen_string_literal: true -*-
 
+require 'forwardable'
 require 'rims/rfc822/version'
 require 'time'
 
@@ -266,6 +267,68 @@ module RIMS
     module_function :parse_content_language
     module_function :parse_multipart_body
     module_function :parse_mail_address_list
+
+    class CharsetAliases
+      def initialize
+        @alias_table = {}
+      end
+
+      # API methods
+
+      def [](name)
+        @alias_table[name.upcase]
+      end
+
+      def add_alias(name, encoding)
+        @alias_table[name.upcase] = encoding
+        self
+      end
+
+      def delete_alias(name)
+        @alias_table.delete(name.upcase)
+      end
+
+      # minimal methods like `Hash'
+
+      extend Forwardable
+      include Enumerable
+
+      def_delegators :@alias_table, :empty?, :size, :keys
+      alias length size
+
+      def key?(name)
+        @alias_table.key? name.upcase
+      end
+
+      alias has_key? key?
+      alias include? key?
+      alias member? key?
+
+      def each_key
+        return enum_for(:each_key) unless block_given?
+        @alias_table.each_key do |name|
+          yield(name)
+        end
+        self
+      end
+
+      def each_pair
+        return enum_for(:each_pair) unless block_given?
+        @alias_table.each_pair do |name, encoding|
+          yield(name, encoding)
+        end
+        self
+      end
+
+      alias each each_pair
+    end
+
+    DEFAULT_CHARSET_ALIASES = CharsetAliases.new
+    #DEFAULT_CHARSET_ALIASES.add_alias('euc-jp', Encoding::CP51932)
+    DEFAULT_CHARSET_ALIASES.add_alias('euc-jp', Encoding::EUCJP_MS)
+    #DEFAULT_CHARSET_ALIASES.add_alias('iso-2022-jp', Encoding::CP50220)
+    DEFAULT_CHARSET_ALIASES.add_alias('iso-2022-jp', Encoding::CP50221)
+    DEFAULT_CHARSET_ALIASES.add_alias('shift_jis', Encoding::WINDOWS_31J)
 
     module CharsetText
       CHARSET_ALIAS_TABLE = {}

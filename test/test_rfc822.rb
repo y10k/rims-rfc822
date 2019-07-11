@@ -443,6 +443,101 @@ baz
     end
   end
 
+  class RFC822CharsetAliasesTest < Test::Unit::TestCase
+    def setup
+      @aliases = RIMS::RFC822::CharsetAliases.new
+    end
+
+    def add_aliases
+      @aliases.add_alias('euc-jp', Encoding::EUCJP_MS)
+      @aliases.add_alias('iso-2022-jp', Encoding::CP50221)
+      @aliases.add_alias('shift_jis', Encoding::WINDOWS_31J)
+      nil
+    end
+    private :add_aliases
+
+    def test_empty
+      assert_nil(@aliases['euc-jp'])
+      assert_equal(true, @aliases.empty?)
+      assert_equal(0, @aliases.size)
+      assert_equal(false, (@aliases.key? 'euc-jp'))
+      assert_equal([], @aliases.keys)
+      assert_equal([], @aliases.each_key.to_a)
+      assert_equal([], @aliases.each_pair.to_a)
+      assert_equal([], @aliases.each.to_a)
+      assert_equal([], @aliases.to_a)
+    end
+
+    def test_values
+      add_aliases
+      assert_equal(Encoding::EUCJP_MS,    @aliases['euc-jp'])
+      assert_equal(Encoding::CP50221,     @aliases['iso-2022-jp'])
+      assert_equal(Encoding::WINDOWS_31J, @aliases['shift_jis'])
+      assert_equal(false, @aliases.empty?)
+      assert_equal(3, @aliases.size)
+      assert_equal(true, (@aliases.key? 'euc-jp'))
+      assert_equal(true, (@aliases.key? 'iso-2022-jp'))
+      assert_equal(true, (@aliases.key? 'shift_jis'))
+      assert_equal(%w[ EUC-JP ISO-2022-JP SHIFT_JIS ], @aliases.keys)
+      assert_equal(%w[ EUC-JP ISO-2022-JP SHIFT_JIS ], @aliases.each_key.to_a)
+      assert_equal([ [ 'EUC-JP',      Encoding::EUCJP_MS ],
+                     [ 'ISO-2022-JP', Encoding::CP50221 ],
+                     [ 'SHIFT_JIS',   Encoding::WINDOWS_31J ]
+                   ],
+                   @aliases.each_pair.to_a)
+      assert_equal([ [ 'EUC-JP',      Encoding::EUCJP_MS ],
+                     [ 'ISO-2022-JP', Encoding::CP50221 ],
+                     [ 'SHIFT_JIS',   Encoding::WINDOWS_31J ]
+                   ],
+                   @aliases.each.to_a)
+      assert_equal([ [ 'EUC-JP',      Encoding::EUCJP_MS ],
+                     [ 'ISO-2022-JP', Encoding::CP50221 ],
+                     [ 'SHIFT_JIS',   Encoding::WINDOWS_31J ]
+                   ],
+                   @aliases.to_a)
+    end
+
+    data('downcase'  => 'shift_jis',
+         'camelcase' => 'Shift_JIS',
+         'upcase'    => 'SHIFT_JIS')
+    def test_ignore_case(data)
+      charset = data
+      add_aliases
+      assert_equal(Encoding::WINDOWS_31J, @aliases[charset])
+    end
+
+    data('downcase'  => 'shift_jis',
+         'camelcase' => 'Shift_JIS',
+         'upcase'    => 'SHIFT_JIS')
+    def test_delete_alias(data)
+      charset = data
+      add_aliases
+      assert_equal(Encoding::WINDOWS_31J, @aliases.delete_alias(charset))
+      assert_equal(Encoding::EUCJP_MS, @aliases['euc-jp'])
+      assert_equal(Encoding::CP50221,  @aliases['iso-2022-jp'])
+      assert_nil(@aliases['shift_jis'])
+      assert_equal(false, @aliases.empty?)
+      assert_equal(2, @aliases.size)
+      assert_equal(true,  (@aliases.key? 'euc-jp'))
+      assert_equal(true,  (@aliases.key? 'iso-2022-jp'))
+      assert_equal(false, (@aliases.key? 'shift_jis'))
+      assert_equal(%w[ EUC-JP ISO-2022-JP ], @aliases.keys)
+      assert_equal(%w[ EUC-JP ISO-2022-JP ], @aliases.each_key.to_a)
+      assert_equal([ [ 'EUC-JP',      Encoding::EUCJP_MS ],
+                     [ 'ISO-2022-JP', Encoding::CP50221 ]
+                   ],
+                   @aliases.each_pair.to_a)
+      assert_equal([ [ 'EUC-JP',      Encoding::EUCJP_MS ],
+                     [ 'ISO-2022-JP', Encoding::CP50221 ]
+                   ],
+                   @aliases.each.to_a)
+      assert_equal([ [ 'EUC-JP',      Encoding::EUCJP_MS ],
+                     [ 'ISO-2022-JP', Encoding::CP50221 ]
+                   ],
+                   @aliases.to_a)
+    end
+  end
+
   class RFC822CharsetTextTest < Test::Unit::TestCase
     data('no_charset' => [ "Hello world.\r\n".b, "Hello world.\r\n" ],
          'utf-8' => [
