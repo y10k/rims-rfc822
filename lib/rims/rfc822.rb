@@ -79,7 +79,7 @@ module RIMS
               # ignore comment text.
             end
           else
-            raise "internal error: unknown state #{state}"
+            raise "internal error - unknown state: #{state}"
           end
         end
 
