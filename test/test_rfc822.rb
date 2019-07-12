@@ -795,10 +795,11 @@ baz
   class RFC822MessageTest < Test::Unit::TestCase
     def setup_message(headers={},
                       content_type: 'text/plain; charset=utf-8',
+                      subject: 'test',
                       body: "Hello world.\r\n")
       src = headers.map{|n, v| "#{n}: #{v}\r\n" }.join('')
       src << "Content-Type: #{content_type}\r\n" if content_type
-      src << "Subject: test\r\n"
+      src << "Subject: #{subject}\r\n" if subject
       src << "\r\n"
       src << body if body
       pp [ src.encoding, src ] if $DEBUG
@@ -1113,6 +1114,57 @@ Content-Type: application/octet-stream
     def test_mail_address_header_field_bad_format
       setup_message('From' => 'no_mail_address')
       assert_equal([], @msg.from)
+    end
+
+    data('base64'           => '=?UTF-8?B?44GT44KT44Gr44Gh44Gv?=',
+         'quoted-printable' => '=?UTF-8?Q?=E3=81=93=E3=82=93=E3=81=AB=E3=81=A1=E3=81=AF?=')
+    def test_mime_decoded_header(data)
+      subject = data
+      setup_message(subject: subject)
+      assert_equal(Encoding::UTF_8, @msg.mime_decoded_header('Subject').encoding)
+      assert_equal("\u3053\u3093\u306B\u3061\u306F", @msg.mime_decoded_header('Subject'))
+    end
+
+    def test_mime_decoded_header_decode_charset
+      setup_message(subject: '=?ISO-2022-JP?B?GyRCJDMkcxsoQg==?= =?EUC-JP?Q?=A4=CB=A4=C1=A4=CF?=')
+      assert_equal(Encoding::UTF_8, @msg.mime_decoded_header('Subject', 'utf-8').encoding)
+      assert_equal("\u3053\u3093\u306B\u3061\u306F", @msg.mime_decoded_header('Subject', 'utf-8'))
+    end
+
+    data('base64'           => '=?UTF-8?B?44GT44KT44Gr44Gh44Gv?=',
+         'quoted-printable' => '=?UTF-8?Q?=E3=81=93=E3=82=93=E3=81=AB=E3=81=A1=E3=81=AF?=')
+    def test_mime_decoded_header_field_value_list(data)
+      subject = data
+      setup_message(subject: subject)
+      assert_equal([ Encoding::UTF_8 ], @msg.mime_decoded_header_field_value_list('Subject').map(&:encoding))
+      assert_equal([ "\u3053\u3093\u306B\u3061\u306F" ], @msg.mime_decoded_header_field_value_list('Subject'))
+    end
+
+    def test_mime_decoded_header_field_value_list_decode_charset
+      setup_message(subject: '=?ISO-2022-JP?B?GyRCJDMkcxsoQg==?= =?EUC-JP?Q?=A4=CB=A4=C1=A4=CF?=')
+      assert_equal([ Encoding::UTF_8 ], @msg.mime_decoded_header_field_value_list('Subject', 'utf-8').map(&:encoding))
+      assert_equal([ "\u3053\u3093\u306B\u3061\u306F" ], @msg.mime_decoded_header_field_value_list('Subject', 'utf-8'))
+    end
+
+    data('base64'           => '=?UTF-8?B?44GT44KT44Gr44Gh44Gv?=',
+         'quoted-printable' => '=?UTF-8?Q?=E3=81=93=E3=82=93=E3=81=AB=E3=81=A1=E3=81=AF?=')
+    def test_mime_decoded_header_text(data)
+      subject = data
+      setup_message(subject: subject)
+      assert_equal(Encoding::UTF_8, @msg.mime_decoded_header_text.encoding)
+      assert_equal("Content-Type: text/plain; charset=utf-8\r\n" +
+                   "Subject: \u3053\u3093\u306B\u3061\u306F\r\n" +
+                   "\r\n",
+                   @msg.mime_decoded_header_text)
+    end
+
+    def test_mime_decoded_header_text_decode_charset
+      setup_message(subject: '=?ISO-2022-JP?B?GyRCJDMkcxsoQg==?= =?EUC-JP?Q?=A4=CB=A4=C1=A4=CF?=')
+      assert_equal(Encoding::UTF_8, @msg.mime_decoded_header_text('utf-8').encoding)
+      assert_equal("Content-Type: text/plain; charset=utf-8\r\n" +
+                   "Subject: \u3053\u3093\u306B\u3061\u306F\r\n" +
+                   "\r\n",
+                   @msg.mime_decoded_header_text('utf-8'))
     end
 
     data('plain_text' => [

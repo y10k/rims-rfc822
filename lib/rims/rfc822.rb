@@ -539,6 +539,9 @@ module RIMS
         @to = nil
         @cc = nil
         @bcc = nil
+        @mime_decoded_header_cache = nil
+        @mime_decoded_header_field_value_list_cache = nil
+        @mime_decoded_header_text_cache = nil
         @mime_charset_body_text = nil
       end
 
@@ -775,6 +778,50 @@ module RIMS
 
       def bcc
         mail_address_header_field('bcc')
+      end
+
+      def make_charset_key(charset)
+        if (charset.is_a? Encoding) then
+          charset
+        else
+          charset.downcase.freeze
+        end
+      end
+      private :make_charset_key
+
+      def mime_decoded_header(name, decode_charset=nil, charset_convert_options: {})
+        cache_key = [
+          name.downcase.freeze,
+          (decode_charset) ? make_charset_key(decode_charset) : :default
+        ].freeze
+        @mime_decoded_header_cache ||= {}
+        @mime_decoded_header_cache[cache_key] ||= CharsetText.decode_mime_encoded_words(header[name],
+                                                                                        decode_charset,
+                                                                                        charset_aliases: @charset_aliases,
+                                                                                        charset_convert_options: charset_convert_options)
+      end
+
+      def mime_decoded_header_field_value_list(name, decode_charset=nil, charset_convert_options: {})
+        cache_key = [
+          name.downcase.freeze,
+          (decode_charset) ? make_charset_key(decode_charset) : :default
+        ].freeze
+        @mime_decoded_header_field_value_list_cache ||= {}
+        @mime_decoded_header_field_value_list_cache[cache_key] ||= header.field_value_list(name).map{|field_value|
+          CharsetText.decode_mime_encoded_words(field_value,
+                                                decode_charset,
+                                                charset_aliases: @charset_aliases,
+                                                charset_convert_options: charset_convert_options)
+        }.freeze
+      end
+
+      def mime_decoded_header_text(decode_charset=nil, charset_convert_options: {})
+        cache_key = (decode_charset) ? make_charset_key(decode_charset) : :default
+        @mime_decoded_header_text_cache ||= {}
+        @mime_decoded_header_text_cache[cache_key] ||= CharsetText.decode_mime_encoded_words(header.raw_source,
+                                                                                             decode_charset,
+                                                                                             charset_aliases: @charset_aliases,
+                                                                                             charset_convert_options: charset_convert_options)
       end
 
       def mime_charset_body_text
