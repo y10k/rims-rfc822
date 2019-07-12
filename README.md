@@ -33,6 +33,15 @@ msg = RIMS::RFC822::Message.new(your_rfc822_text)
 p msg.header
 p msg.body
 
+# header fields
+p msg.header[name]
+p msg.header.fetch_upcase(name)
+p msg.header.field_value_list(name)
+p msg.header.key? name
+msg.header.each do |name, value|
+  p [ name, value ]
+end
+
 # source text attributes
 p msg.raw_source
 p msg.header.raw_source
@@ -61,12 +70,23 @@ p msg.to
 p msg.cc
 p msg.bcc
 
-# content attributes
+# body structure attributes
 p msg.text?
 p msg.multipart?
 p msg.message?
 p msg.parts
 p msg.message
+
+# MIME header and body attributes
+p msg.mime_decoded_header(name)
+p msg.mime_decoded_header(name, decode_charset)
+p msg.mime_decoded_header_field_value_list(name)
+p msg.mime_decoded_header_field_value_list(name, decode_charset)
+p msg.mime_decoded_header_text
+p msg.mime_decoded_header_text(decode_charset)
+p msg.mime_charset_body_text
+p msg.mime_charset_body_text(charset)
+p msg.mime_binary_body_string
 ```
 
 Contributing
