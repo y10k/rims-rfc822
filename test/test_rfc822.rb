@@ -1014,27 +1014,27 @@ Content-Type: application/octet-stream
       assert_equal([], @msg.from)
     end
 
-    def test_body_text_utf8
+    def test_mime_charset_body_text_utf8
       setup_message(content_type: 'text/plain; charset=utf-8',
                     body: "\u3053\u3093\u306B\u3061\u306F\r\n".b)
-      assert_equal(Encoding::UTF_8, @msg.body_text.encoding)
-      assert_equal("\u3053\u3093\u306B\u3061\u306F\r\n", @msg.body_text)
+      assert_equal(Encoding::UTF_8, @msg.mime_charset_body_text.encoding)
+      assert_equal("\u3053\u3093\u306B\u3061\u306F\r\n", @msg.mime_charset_body_text)
     end
 
-    def test_body_text_base64
+    def test_mime_charset_body_text_base64
       setup_message({ 'Content-Transfer-Encoding' => 'base64' },
                     content_type: 'text/plain; charset=utf-8',
                     body: "44GT44KT44Gr44Gh44GvDQo=\n".b)
-      assert_equal(Encoding::UTF_8, @msg.body_text.encoding)
-      assert_equal("\u3053\u3093\u306B\u3061\u306F\r\n", @msg.body_text)
+      assert_equal(Encoding::UTF_8, @msg.mime_charset_body_text.encoding)
+      assert_equal("\u3053\u3093\u306B\u3061\u306F\r\n", @msg.mime_charset_body_text)
     end
 
-    def test_body_text_quoted_printable
+    def test_mime_charset_body_text_quoted_printable
       setup_message({ 'Content-Transfer-Encoding' => 'quoted-printable' },
                     content_type: 'text/plain; charset=utf-8',
                     body: "=E3=81=93=E3=82=93=E3=81=AB=E3=81=A1=E3=81=AF\r\n".b)
-      assert_equal(Encoding::UTF_8, @msg.body_text.encoding)
-      assert_equal("\u3053\u3093\u306B\u3061\u306F\r\n", @msg.body_text)
+      assert_equal(Encoding::UTF_8, @msg.mime_charset_body_text.encoding)
+      assert_equal("\u3053\u3093\u306B\u3061\u306F\r\n", @msg.mime_charset_body_text)
     end
   end
 end

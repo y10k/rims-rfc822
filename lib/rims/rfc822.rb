@@ -456,7 +456,7 @@ module RIMS
         @to = nil
         @cc = nil
         @bcc = nil
-        @body_text = nil
+        @mime_charset_body_text = nil
       end
 
       attr_reader :raw_source
@@ -694,11 +694,11 @@ module RIMS
         mail_address_header_field('bcc')
       end
 
-      def body_text
-        @body_text ||= CharsetText.get_mime_charset_text(body.raw_source,
-                                                         charset,
-                                                         header['Content-Transfer-Encoding'],
-                                                         charset_aliases: @charset_aliases)
+      def mime_charset_body_text
+        @mime_charset_body_text ||= CharsetText.get_mime_charset_text(body.raw_source,
+                                                                      charset,
+                                                                      header['Content-Transfer-Encoding'],
+                                                                      charset_aliases: @charset_aliases)
       end
     end
   end
