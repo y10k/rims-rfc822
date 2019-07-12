@@ -491,6 +491,11 @@ module RIMS
         @field_table.key? name.downcase
       end
 
+      # aliases like `Hash'
+      alias has_key? key?
+      alias include? key?
+      alias member? key?
+
       def [](name)
         setup_header
         if (value_list = @field_table[name.downcase]) then
