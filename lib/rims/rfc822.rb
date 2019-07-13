@@ -472,8 +472,9 @@ module RIMS
             value_list.freeze
           end
           @field_table.freeze
-          self
         end
+
+        nil
       end
       private :setup_header
 
@@ -557,8 +558,9 @@ module RIMS
           header_txt, body_txt = Parse.split_message(@raw_source)
           @header = Header.new(header_txt || '')
           @body = Body.new(body_txt || '')
-          self
         end
+
+        nil
       end
       private :setup_message
 
@@ -573,10 +575,8 @@ module RIMS
       end
 
       def setup_content_type
-        if (@content_type.nil?) then
-          @content_type = Parse.parse_content_type(header['Content-Type'] || '')
-          self
-        end
+        @content_type ||= Parse.parse_content_type(header['Content-Type'] || '')
+        nil
       end
       private :setup_content_type
 
@@ -636,11 +636,10 @@ module RIMS
 
       def setup_content_disposition
         if (header.key? 'Content-Disposition') then
-          if (@content_disposition.nil?) then
-            @content_disposition = Parse.parse_content_disposition(header['Content-Disposition'])
-            self
-          end
+          @content_disposition ||= Parse.parse_content_disposition(header['Content-Disposition'])
         end
+
+        nil
       end
       private :setup_content_type
 
@@ -674,11 +673,13 @@ module RIMS
       def setup_content_language
         if (header.key? 'Content-Language') then
           if (@content_language.nil?) then
-            @content_language = header.field_value_list('Content-Language').map{|tags_txt| Parse.parse_content_language(tags_txt) }.inject(:+)
+            @content_language = header.field_value_list('Content-Language').map{|tags_txt| Parse.parse_content_language(tags_txt) }
+            @content_language.flatten!
             @content_language.freeze
-            self
           end
         end
+
+        nil
       end
       private :setup_content_language
 
@@ -723,11 +724,7 @@ module RIMS
 
       def message
         if (message?) then
-          if (@message.nil?) then
-            @message = Message.new(body.raw_source)
-          end
-
-          @message
+          @message ||= Message.new(body.raw_source)
         end
       end
 
@@ -751,7 +748,8 @@ module RIMS
           ivar_name = '@' + field_name.downcase.gsub('-', '_')
           addr_list = instance_variable_get(ivar_name)
           if (addr_list.nil?) then
-            addr_list = header.field_value_list(field_name).map{|addr_list_txt| Parse.parse_mail_address_list(addr_list_txt) }.inject(:+)
+            addr_list = header.field_value_list(field_name).map{|addr_list_txt| Parse.parse_mail_address_list(addr_list_txt) }
+            addr_list.flatten!
             addr_list.freeze
             instance_variable_set(ivar_name, addr_list)
           end
