@@ -604,7 +604,7 @@ baz
          'shift_jis'   => 'Shift_JIS')
     def test_get_mime_charset_text_charset_alias(data)
       charset = data
-      replaced_encoding = RIMS::RFC822::CharsetText::CHARSET_ALIAS_TABLE[charset.upcase] or flunk
+      replaced_encoding = RIMS::RFC822::DEFAULT_CHARSET_ALIASES[charset] or flunk
 
       platform_dependent_character = "\u2460"
       assert_raise(Encoding::UndefinedConversionError) { platform_dependent_character.encode(charset) }

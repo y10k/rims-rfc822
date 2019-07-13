@@ -331,19 +331,6 @@ module RIMS
     DEFAULT_CHARSET_ALIASES.add_alias('shift_jis', Encoding::WINDOWS_31J)
 
     module CharsetText
-      CHARSET_ALIAS_TABLE = {}
-
-      def add_charset_alias(name, encoding, charset_aliases: CHARSET_ALIAS_TABLE)
-        charset_aliases[name.upcase] = encoding
-        charset_aliases
-      end
-      module_function :add_charset_alias
-
-      def delete_charset_alias(name, charset_aliases: CHARSET_ALIAS_TABLE)
-        charset_aliases.delete(name.upcase)
-      end
-      module_function :delete_charset_alias
-
       def self.find_string_encoding(name)
         begin
           Encoding.find(name)
@@ -352,7 +339,7 @@ module RIMS
         end
       end
 
-      def get_mime_charset_text(binary_string, charset, transfer_encoding=nil, charset_aliases: CHARSET_ALIAS_TABLE)
+      def get_mime_charset_text(binary_string, charset, transfer_encoding=nil, charset_aliases: DEFAULT_CHARSET_ALIASES)
         case (transfer_encoding&.upcase)
         when 'BASE64'
           text = binary_string.unpack1('m')
@@ -366,7 +353,7 @@ module RIMS
           if (charset.is_a? Encoding) then
             enc = charset
           else
-            enc = charset_aliases[charset.upcase] ||
+            enc = charset_aliases[charset] ||
                   CharsetText.find_string_encoding(charset) # raise `EncodingError' when wrong charset due to document
           end
           text.force_encoding(enc)
@@ -377,13 +364,6 @@ module RIMS
       end
       module_function :get_mime_charset_text
     end
-
-    # default charset aliases
-    #CharsetText.add_charset_alias('euc-jp', Encoding::CP51932)
-    CharsetText.add_charset_alias('euc-jp', Encoding::EUCJP_MS)
-    #CharsetText.add_charset_alias('iso-2022-jp', Encoding::CP50220)
-    CharsetText.add_charset_alias('iso-2022-jp', Encoding::CP50221)
-    CharsetText.add_charset_alias('shift_jis', Encoding::WINDOWS_31J)
 
     class Header
       include Enumerable
@@ -459,9 +439,9 @@ module RIMS
     end
 
     class Message
-      def initialize(msg_txt, charset_aliases: CharsetText::CHARSET_ALIAS_TABLE)
+      def initialize(msg_txt, charset_aliases: DEFAULT_CHARSET_ALIASES)
         @raw_source = msg_txt.dup.freeze
-        @charset_alias_table = charset_aliases
+        @charset_aliases = charset_aliases
         @header = nil
         @body = nil
         @content_type = nil
@@ -718,7 +698,7 @@ module RIMS
         @body_text ||= CharsetText.get_mime_charset_text(body.raw_source,
                                                          charset,
                                                          header['Content-Transfer-Encoding'],
-                                                         charset_aliases: @charset_alias_table)
+                                                         charset_aliases: @charset_aliases)
       end
     end
   end
