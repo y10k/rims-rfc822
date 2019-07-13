@@ -843,6 +843,10 @@ module RIMS
                                                                                          charset_aliases: @charset_aliases)
         end
       end
+
+      def mime_binary_body_string
+        mime_charset_body_text(Encoding::ASCII_8BIT)
+      end
     end
   end
 end

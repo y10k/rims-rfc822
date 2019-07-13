@@ -1212,6 +1212,9 @@ Content-Type: application/octet-stream
 
       assert_equal(expected_text.encoding, @msg.mime_charset_body_text(*optional).encoding)
       assert_equal(expected_text, @msg.mime_charset_body_text(*optional))
+
+      assert_equal(Encoding::ASCII_8BIT, @msg.mime_binary_body_string.encoding)
+      assert_equal(expected_text.b, @msg.mime_binary_body_string)
     end
   end
 end
