@@ -1168,24 +1168,50 @@ Content-Type: application/octet-stream
     end
 
     data('plain_text' => [
+            {},
+           'text/plain; charset=utf-8',
+           "\u3053\u3093\u306B\u3061\u306F\r\n",
            "\u3053\u3093\u306B\u3061\u306F\r\n"
          ],
          'base64' => [
+           { 'Content-Transfer-Encoding' => 'base64' },
+           'text/plain; charset=utf-8',
            "44GT44KT44Gr44Gh44GvDQo=\n",
-           'Content-Transfer-Encoding' => 'base64'
+           "\u3053\u3093\u306B\u3061\u306F\r\n"
          ],
          'quoted-printable' => [
+           { 'Content-Transfer-Encoding' => 'quoted-printable' },
+           'text/plain; charset=utf-8',
            "=E3=81=93=E3=82=93=E3=81=AB=E3=81=A1=E3=81=AF\r\n",
-           'Content-Transfer-Encoding' => 'quoted-printable'
+           "\u3053\u3093\u306B\u3061\u306F\r\n"
+         ],
+         'force_charset' => [
+           { 'Content-Transfer-Encoding' => 'base64' },
+           'text/plain', # no charset
+           "GyRCJDMkcyRLJEEkTxsoQg0K\n",
+           "\u3053\u3093\u306B\u3061\u306F\r\n".encode(Encoding::ISO_2022_JP),
+           Encoding::ISO_2022_JP
+         ],
+         'no_text' => [
+           {},
+           'application/octet-stream',
+           'foo',
+           'foo'.b
+         ],
+         'no_text:ignore_charset' => [
+           {},
+           'application/octet-stream; charset=utf-8',
+           'foo',
+           'foo'.b
          ])
     def test_mime_charset_body_text(data)
-      body, header = data
-      setup_message(header || {},
-                    content_type: 'text/plain; charset=utf-8',
+      header, content_type, body, expected_text, *optional = data
+      setup_message(header,
+                    content_type: content_type,
                     body: body)
 
-      assert_equal(Encoding::UTF_8, @msg.mime_charset_body_text.encoding)
-      assert_equal("\u3053\u3093\u306B\u3061\u306F\r\n", @msg.mime_charset_body_text)
+      assert_equal(expected_text.encoding, @msg.mime_charset_body_text(*optional).encoding)
+      assert_equal(expected_text, @msg.mime_charset_body_text(*optional))
     end
   end
 end

@@ -542,7 +542,7 @@ module RIMS
         @mime_decoded_header_cache = nil
         @mime_decoded_header_field_value_list_cache = nil
         @mime_decoded_header_text_cache = nil
-        @mime_charset_body_text = nil
+        @mime_charset_body_text_cache = nil
       end
 
       attr_reader :raw_source
@@ -824,11 +824,24 @@ module RIMS
                                                                                              charset_convert_options: charset_convert_options)
       end
 
-      def mime_charset_body_text
-        @mime_charset_body_text ||= CharsetText.get_mime_charset_text(body.raw_source,
-                                                                      charset,
-                                                                      header['Content-Transfer-Encoding'],
-                                                                      charset_aliases: @charset_aliases)
+      def mime_charset_body_text(charset=nil)
+        @mime_charset_body_text_cache ||= {}
+        unless (charset) then
+          unless (@mime_charset_body_text_cache.key? :default) then
+            charset = (text?) ? self.charset : Encoding::ASCII_8BIT
+            @mime_charset_body_text_cache[:default] = CharsetText.get_mime_charset_text(body.raw_source,
+                                                                                        charset,
+                                                                                        header['Content-Transfer-Encoding'],
+                                                                                        charset_aliases: @charset_aliases)
+          end
+          @mime_charset_body_text_cache[:default]
+        else
+          cache_key = make_charset_key(charset)
+          @mime_charset_body_text_cache[cache_key] ||= CharsetText.get_mime_charset_text(body.raw_source,
+                                                                                         charset,
+                                                                                         header['Content-Transfer-Encoding'],
+                                                                                         charset_aliases: @charset_aliases)
+        end
       end
     end
   end
