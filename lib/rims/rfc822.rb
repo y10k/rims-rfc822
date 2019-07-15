@@ -10,7 +10,7 @@ module RIMS
       def split_message(msg_txt)
         header_txt, body_txt = msg_txt.lstrip.split(/\r?\n\r?\n/, 2)
         if ($&) then
-          header_txt << $& if $&
+          header_txt << $&
         else
           body_txt = header_txt
           header_txt = nil
