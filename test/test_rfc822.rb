@@ -1192,13 +1192,13 @@ Content-Type: application/octet-stream
            "\u3053\u3093\u306B\u3061\u306F\r\n".encode(Encoding::ISO_2022_JP),
            Encoding::ISO_2022_JP
          ],
-         'no_text' => [
+         'not_text' => [
            {},
            'application/octet-stream',
            'foo',
            'foo'.b
          ],
-         'no_text:ignore_charset' => [
+         'not_text:ignore_charset' => [
            {},
            'application/octet-stream; charset=utf-8',
            'foo',
