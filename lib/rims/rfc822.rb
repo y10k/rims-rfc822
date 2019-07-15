@@ -770,7 +770,7 @@ module RIMS
 
       def mail_address_header_field(field_name)
         if (header.key? field_name) then
-          ivar_name = '@' + field_name.downcase.gsub('-', '_')
+          ivar_name = '@' + field_name.downcase.tr('-', '_')
           addr_list = instance_variable_get(ivar_name)
           if (addr_list.nil?) then
             addr_list = header.field_value_list(field_name).map{|addr_list_txt| Parse.parse_mail_address_list(addr_list_txt) }
