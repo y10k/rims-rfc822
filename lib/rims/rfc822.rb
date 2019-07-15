@@ -96,7 +96,16 @@ module RIMS
 
       def parse_parameters(parameters_txt)
         params = {}
-        parameters_txt.scan(%r'(?<name>\S+?) \s* = \s* (?: (?<quoted_string>".*?") | (?<token>\S+?) ) \s* (?:;|\Z)'x) do
+        parameters_txt.scan(%r{
+          (?<name> \S+? )
+          \s* = \s*
+          (?:
+            (?<quoted_string> ".*?" ) |
+            (?<token> \S+? )
+          )
+          \s*
+          (?: ; | \Z )
+        }x) do
           name = $~[:name]
           if ($~[:quoted_string]) then
             quoted_value = $~[:quoted_string]
@@ -207,7 +216,7 @@ module RIMS
           if (src_txt.sub!(%r{
                 \A
                 \s*
-                (?<display_name>\S.*?) \s* : (?<group_list>.*?) ;
+                (?<display_name> \S.*? ) \s* : (?<group_list> .*? ) ;
                 \s*
                 ,?
               }x, ''))
@@ -220,7 +229,9 @@ module RIMS
           elsif (src_txt.sub!(%r{
                    \A
                    \s*
-                   (?<local_part>[^<>@",\s]+) \s* @ \s* (?<domain>[^<>@",\s]+)
+                   (?<local_part> [^<>@",\s]+ )
+                   \s* @ \s*
+                   (?<domain> [^<>@",\s]+ )
                    \s*
                    ,?
                  }x, ''))
@@ -229,17 +240,25 @@ module RIMS
           elsif (src_txt.sub!(%r{
                    \A
                    \s*
-                   (?<display_name>\S.*?)
+                   (?<display_name> \S.*? )
                    \s*
                    <
                      \s*
                      (?:
-                       (?<route>@[^<>@",]* (?:, \s* @[^<>@",]*)*)
+                       (?<route>
+                         @[^<>@",]*
+                         (?:
+                           , \s*
+                           @[^<>@",]*
+                         )*
+                       )
                        \s*
                        :
                      )?
                      \s*
-                     (?<local_part>[^<>@",\s]+) \s* @ \s* (?<domain>[^<>@",\s]+)
+                     (?<local_part> [^<>@",\s]+ )
+                     \s* @ \s*
+                     (?<domain> [^<>@",\s]+ )
                      \s*
                    >
                    \s*
