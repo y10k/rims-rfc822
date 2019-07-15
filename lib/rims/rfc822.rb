@@ -402,7 +402,7 @@ module RIMS
               # run the slow `String#encode' only when really needed
               # because of a premise that the strings other than
               # encoded words are ASCII only.
-              foreword.encode!(decode_charset_encoding, charset_convert_options)
+              foreword.encode!(dst.encoding, charset_convert_options)
             end
             dst << foreword
           end
