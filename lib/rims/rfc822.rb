@@ -660,8 +660,10 @@ module RIMS
       end
 
       def setup_content_disposition
-        if (header.key? 'Content-Disposition') then
-          @content_disposition ||= Parse.parse_content_disposition(header['Content-Disposition'])
+        if (@content_disposition.nil?) then
+          if (header.key? 'Content-Disposition') then
+            @content_disposition = Parse.parse_content_disposition(header['Content-Disposition'])
+          end
         end
 
         nil
@@ -696,8 +698,8 @@ module RIMS
       alias content_disposition_parameters content_disposition_parameter_list
 
       def setup_content_language
-        if (header.key? 'Content-Language') then
-          if (@content_language.nil?) then
+        if (@content_language.nil?) then
+          if (header.key? 'Content-Language') then
             @content_language = header.field_value_list('Content-Language').map{|tags_txt| Parse.parse_content_language(tags_txt) }
             @content_language.flatten!
             @content_language.freeze
@@ -728,8 +730,8 @@ module RIMS
       end
 
       def parts
-        if (multipart?) then
-          if (@parts.nil?) then
+        if (@parts.nil?) then
+          if (multipart?) then
             if (boundary = self.boundary) then
               part_list = Parse.parse_multipart_body(boundary, body.raw_source)
               @parts = part_list.map{|msg_txt| Message.new(msg_txt) }
@@ -738,9 +740,9 @@ module RIMS
             end
             @parts.freeze
           end
-
-          @parts
         end
+
+        @parts
       end
 
       def message?
@@ -748,14 +750,18 @@ module RIMS
       end
 
       def message
-        if (message?) then
-          @message ||= Message.new(body.raw_source)
+        if (@message.nil?) then
+          if (message?) then
+            @message = Message.new(body.raw_source)
+          end
         end
+
+        @message
       end
 
       def date
-        if (header.key? 'Date') then
-          if (@date.nil?) then
+        if (@date.nil?) then
+          if (header.key? 'Date') then
             begin
               @date = Time.parse(header['Date'])
             rescue ArgumentError
@@ -763,9 +769,9 @@ module RIMS
             end
             @date.freeze
           end
-
-          @date
         end
+
+        @date
       end
 
       def mail_address_header_field(field_name)
