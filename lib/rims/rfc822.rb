@@ -208,7 +208,7 @@ module RIMS
           then
             display_name = $~[:display_name]
             group_list = $~[:group_list]
-            addr_list << Address.new( nil, nil, unquote_phrase(display_name), nil).freeze
+            addr_list << Address.new(nil, nil, unquote_phrase(display_name), nil).freeze
             addr_list.concat(parse_mail_address_list(group_list))
             addr_list << Address.new(nil, nil, nil, nil).freeze
           elsif (src_txt.sub!(%r{
