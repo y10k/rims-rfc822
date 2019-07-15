@@ -57,7 +57,10 @@ module RIMS
             when '('
               state = :comment
             when "\\"
-              src_txt.sub!(/\A./, '') and dst_txt << $&
+              unless (src_txt.empty?) then
+                dst_txt << src_txt[0]
+                src_txt[0] = ''
+              end
             else
               dst_txt << match_txt
             end
@@ -66,7 +69,10 @@ module RIMS
             when '"'
               state = :raw
             when "\\"
-              src_txt.sub!(/\A./, '') && dst_txt << $&
+              unless (src_txt.empty?) then
+                dst_txt << src_txt[0]
+                src_txt[0] = ''
+              end
             else
               dst_txt << match_txt
             end
@@ -75,7 +81,7 @@ module RIMS
             when ')'
               state = :raw
             when "\\"
-              src_txt.sub!(/\A./, '')
+              src_txt[0] = ''
             else
               # ignore comment text.
             end
