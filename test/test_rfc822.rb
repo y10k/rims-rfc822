@@ -730,25 +730,6 @@ baz
       pp @header if $DEBUG
     end
 
-    def test_each
-      assert_equal([ %w[ foo apple ], %w[ bar Bob ], %w[ Foo banana ], %w[ FOO orange ] ],
-                   @header.each.to_a)
-    end
-
-    def test_key?
-      assert_equal(true, (@header.key? 'foo'))
-      assert_equal(true, (@header.key? 'Foo'))
-      assert_equal(true, (@header.key? 'FOO'))
-
-      assert_equal(true, (@header.key? 'bar'))
-      assert_equal(true, (@header.key? 'Bar'))
-      assert_equal(true, (@header.key? 'BAR'))
-
-      assert_equal(false, (@header.key? 'baz'))
-      assert_equal(false, (@header.key? 'Baz'))
-      assert_equal(false, (@header.key? 'BAZ'))
-    end
-
     def test_fetch
       assert_equal('apple', @header['foo'])
       assert_equal('apple', @header['Foo'])
@@ -789,6 +770,38 @@ baz
       assert_nil(@header.field_value_list('baz'))
       assert_nil(@header.field_value_list('Baz'))
       assert_nil(@header.field_value_list('BAZ'))
+    end
+
+    def test_empty?
+      assert_equal(false, @header.empty?)
+      assert_equal(true, RIMS::RFC822::Header.new('').empty?)
+    end
+
+    def test_key?
+      assert_equal(true, (@header.key? 'foo'))
+      assert_equal(true, (@header.key? 'Foo'))
+      assert_equal(true, (@header.key? 'FOO'))
+
+      assert_equal(true, (@header.key? 'bar'))
+      assert_equal(true, (@header.key? 'Bar'))
+      assert_equal(true, (@header.key? 'BAR'))
+
+      assert_equal(false, (@header.key? 'baz'))
+      assert_equal(false, (@header.key? 'Baz'))
+      assert_equal(false, (@header.key? 'BAZ'))
+    end
+
+    def test_keys
+      assert_equal(%w[ foo bar ], @header.keys)
+    end
+
+    def test_each_key
+      assert_equal(%w[ foo bar ], @header.each_key.to_a)
+    end
+
+    def test_each_pair
+      assert_equal([ %w[ foo apple ], %w[ bar Bob ], %w[ Foo banana ], %w[ FOO orange ] ],
+                   @header.each_pair.to_a)
     end
   end
 

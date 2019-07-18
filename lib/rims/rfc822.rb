@@ -474,8 +474,6 @@ module RIMS
     end
 
     class Header
-      include Enumerable
-
       def initialize(header_txt)
         @raw_source = header_txt
         @field_list = nil
@@ -489,7 +487,7 @@ module RIMS
           @field_list = Parse.parse_header(@raw_source)
           @field_table = {}
           for name, value in @field_list
-            key = name.downcase
+            key = name.downcase.freeze
             @field_table[key] = [] unless (@field_table.key? key)
             @field_table[key] << value
           end
@@ -503,24 +501,7 @@ module RIMS
       end
       private :setup_header
 
-      def each
-        setup_header
-        return enum_for(:each) unless block_given?
-        for name, value in @field_list
-          yield(name, value)
-        end
-        self
-      end
-
-      def key?(name)
-        setup_header
-        @field_table.key? name.downcase
-      end
-
-      # aliases like `Hash'
-      alias has_key? key?
-      alias include? key?
-      alias member? key?
+      # API methods
 
       def [](name)
         setup_header
@@ -542,6 +523,50 @@ module RIMS
         setup_header
         @field_table[name.downcase]
       end
+
+      # minimal methods like `Hash'
+
+      include Enumerable
+
+      def empty?
+        setup_header
+        @field_list.empty?
+      end
+
+      def key?(name)
+        setup_header
+        @field_table.key? name.downcase
+      end
+
+      # aliases like `Hash'
+      alias has_key? key?
+      alias include? key?
+      alias member? key?
+
+      def keys
+        setup_header
+        @field_table.keys
+      end
+
+      def each_key
+        setup_header
+        return enum_for(:each_key) unless block_given?
+        @field_table.each_key do |key|
+          yield(key)
+        end
+        self
+      end
+
+      def each_pair
+        setup_header
+        return enum_for(:each_pair) unless block_given?
+        for name, value in @field_list
+          yield(name, value)
+        end
+        self
+      end
+
+      alias each each_pair
     end
 
     class Body
