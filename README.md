@@ -37,8 +37,13 @@ p msg.body
 p msg.header[name]
 p msg.header.fetch_upcase(name)
 p msg.header.field_value_list(name)
+p msg.header.empty?
 p msg.header.key? name
-msg.header.each do |name, value|
+p msg.header.keys
+msg.header.each_key do |name|
+  p name
+end
+msg.header.each_pair do |name, value|
   p [ name, value ]
 end
 
