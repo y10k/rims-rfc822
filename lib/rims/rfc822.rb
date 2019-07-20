@@ -513,9 +513,7 @@ module RIMS
       def fetch_upcase(name)
         setup_header
         if (value_list = @field_table[name.downcase]) then
-          if (value = value_list[0]) then
-            value.upcase
-          end
+          value_list[0].upcase
         end
       end
 
@@ -659,6 +657,7 @@ module RIMS
       alias media_subtype_upcase media_sub_type_upcase
 
       def content_type_upcase
+        # not return `nil'
         content_type.upcase
       end
 
@@ -701,9 +700,7 @@ module RIMS
       end
 
       def content_disposition_upcase
-        if (type = content_disposition) then
-          type.upcase
-        end
+        content_disposition&.upcase
       end
 
       def content_disposition_parameter(name)
@@ -741,9 +738,7 @@ module RIMS
       end
 
       def content_language_upcase
-        if (tag_list = content_language) then
-          tag_list.map{|tag| tag.upcase }
-        end
+        content_language&.map{|tag| tag.upcase }
       end
 
       def text?
