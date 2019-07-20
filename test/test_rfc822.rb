@@ -912,6 +912,7 @@ baz
     def test_content_disposition_no_header
       setup_message
       assert_nil(@msg.content_disposition)
+      assert_nil(@msg.content_disposition_upcase)
       assert_nil(@msg.content_disposition_parameter('filename'))
       assert_nil(@msg.content_disposition_parameter_list)
     end
@@ -925,6 +926,7 @@ baz
     def test_content_language_no_header
       setup_message
       assert_nil(@msg.content_language)
+      assert_nil(@msg.content_language_upcase)
     end
 
     def test_text?
