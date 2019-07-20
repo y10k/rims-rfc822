@@ -105,6 +105,7 @@ module RIMS::Test
              [ 'Subject', "This\n is a test" ]
            ]
          ],
+         'no_field_value'                   => [ 'test:', [ [ 'test', '' ] ] ],
          'ignore_illegal_format'            => [ 'foo', [] ],
          'ignore_too_many_field_dseparator' => [ 'foo:bar:baz', [ %w[ foo bar:baz ] ] ])
     def test_parse_header(data)
