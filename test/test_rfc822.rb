@@ -222,7 +222,7 @@ module RIMS::Test
          ],
          'empty' => [
            '',
-           [ 'application', 'octet-stream', {} ]
+           [ 'text', 'plain', {} ]
          ])
     def test_parse_content_type(data)
       header_field, expected_content_type = data
@@ -867,7 +867,7 @@ baz
 
     def test_content_type_no_header
       setup_message(content_type: nil)
-      assert_equal('application/octet-stream', @msg.content_type)
+      assert_equal('text/plain', @msg.content_type)
       assert_nil(@msg.content_type_parameter('charset'))
       assert_equal([], @msg.content_type_parameter_list)
     end

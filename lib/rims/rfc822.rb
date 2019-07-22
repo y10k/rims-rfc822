@@ -154,9 +154,18 @@ module RIMS
           end
         end
 
-        [ 'application'.dup.force_encoding(type_txt.encoding).freeze,
-          'octet-stream'.dup.force_encoding(type_txt.encoding).freeze,
-          params
+        # See RFC2045 / 5.2. Content-Type Defaults
+        # <https://tools.ietf.org/html/rfc2045#section-5.2>
+        #
+        #     Default RFC 822 messages without a MIME Content-Type header are taken
+        #     by this protocol to be plain text in the US-ASCII character set,
+        #     which can be explicitly specified as:
+        #
+        #       Content-type: text/plain; charset=us-ascii
+        #
+        [ 'text'.dup.force_encoding(type_txt.encoding).freeze,
+          'plain'.dup.force_encoding(type_txt.encoding).freeze,
+          params                # default is no charset, it will be `ASCII-8BIT'.
         ].freeze
       end
       module_function :parse_content_type
