@@ -403,7 +403,7 @@ module RIMS
         'Q' => 'QUOTED-PRINTABLE'
       }.freeze
 
-      def decode_mime_encoded_words(encoded_string, decode_charset=nil, charset_aliases: DEFAULT_CHARSET_ALIASES, charset_convert_options: {})
+      def decode_mime_encoded_words(encoded_string, decode_charset=nil, charset_aliases: DEFAULT_CHARSET_ALIASES, charset_convert_options: nil)
         src = encoded_string
         dst = ''.dup
 
@@ -852,7 +852,7 @@ module RIMS
       end
       private :make_charset_key
 
-      def mime_decoded_header(name, decode_charset=nil, charset_convert_options: {})
+      def mime_decoded_header(name, decode_charset=nil, charset_convert_options: nil)
         cache_key = [
           name.downcase.freeze,
           (decode_charset) ? make_charset_key(decode_charset) : :default
@@ -864,7 +864,7 @@ module RIMS
                                                                                         charset_convert_options: charset_convert_options)
       end
 
-      def mime_decoded_header_field_value_list(name, decode_charset=nil, charset_convert_options: {})
+      def mime_decoded_header_field_value_list(name, decode_charset=nil, charset_convert_options: nil)
         cache_key = [
           name.downcase.freeze,
           (decode_charset) ? make_charset_key(decode_charset) : :default
@@ -878,7 +878,7 @@ module RIMS
         }.freeze
       end
 
-      def mime_decoded_header_text(decode_charset=nil, charset_convert_options: {})
+      def mime_decoded_header_text(decode_charset=nil, charset_convert_options: nil)
         cache_key = (decode_charset) ? make_charset_key(decode_charset) : :default
         @mime_decoded_header_text_cache ||= {}
         @mime_decoded_header_text_cache[cache_key] ||= CharsetText.decode_mime_encoded_words(header.raw_source,
