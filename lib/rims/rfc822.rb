@@ -432,10 +432,7 @@ module RIMS
           encoded_word_list = $&.split(/\s+/, -1)
 
           unless (foreword.empty?) then
-            if (dst.encoding.dummy?) then
-              # run the slow `String#encode' only when really needed
-              # because of a premise that the strings other than
-              # encoded words are ASCII only.
+            if (Encoding.compatible? dst, foreword) then
               foreword.encode!(dst.encoding, charset_convert_options)
             end
             dst << foreword
@@ -453,25 +450,23 @@ module RIMS
                 # `decoded_text' is frozen
                 decoded_text = decoded_text.encode(decode_charset_encoding, charset_convert_options)
               end
-            elsif (dst.ascii_only?) then
-              if (decoded_text.encoding.dummy?) then
+            end
+
+            unless (Encoding.compatible? dst, decoded_text) then
+              if (dst.ascii_only?) then
                 dst.encode!(decoded_text.encoding, charset_convert_options)
-              end
-            else
-              if (decoded_text.encoding != dst.encoding) then
+              else
                 # `decoded_text' is frozen
                 decoded_text = decoded_text.encode(dst.encoding, charset_convert_options)
               end
             end
+
             dst << decoded_text
           end
         end
 
         unless (src.empty?) then
-          if (dst.encoding.dummy?) then
-            # run the slow `String#encode' only when really needed
-            # because of a premise that the strings other than encoded
-            # words are ASCII only.
+          unless (Encoding.compatible? dst, src) then
             src = src.encode(dst.encoding, charset_convert_options) # `src' may be frozen
           end
           dst << src

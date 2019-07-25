@@ -686,7 +686,7 @@ baz
            'Hello world.', 'utf-8'
          ],
          'decode_charset:plain_text_dummy_encoding' => [
-           'Hello world.'.encode(iso_2022_jp_alias),
+           'Hello world.'.b,    # the reason: <dummy encoding empty string> + <ascii-8bit string> => <ascii-8bit string>
            'Hello world.', 'iso-2022-jp'
          ],
          'charset_convert_options' => [
