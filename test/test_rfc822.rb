@@ -36,6 +36,18 @@ module RIMS::Test
 
            "HALO\n"
          ],
+         'head_body_cr' => [
+	   "Content-Type: text/plain\r" +
+	   "Subject: test\r" +
+	   "\r" +
+	   "HALO\r",
+
+           "Content-Type: text/plain\r" +
+           "Subject: test\r" +
+           "\r",
+
+           "HALO\r"
+         ],
          'head_only' => [
 	   "Content-Type: text/plain\r\n" +
 	   "Subject: test\r\n" +
@@ -76,6 +88,22 @@ module RIMS::Test
            "Content-Type: text/plain; charset=utf-8\r\n" +
            "Subject: This is a test\r\n" +
            "\r\n",
+           [ [ 'Content-Type', 'text/plain; charset=utf-8' ],
+             [ 'Subject', 'This is a test' ]
+           ]
+         ],
+         'header_lf' => [
+           "Content-Type: text/plain; charset=utf-8\n" +
+           "Subject: This is a test\n" +
+           "\n",
+           [ [ 'Content-Type', 'text/plain; charset=utf-8' ],
+             [ 'Subject', 'This is a test' ]
+           ]
+         ],
+         'header_cr' => [
+           "Content-Type: text/plain; charset=utf-8\r" +
+           "Subject: This is a test\r" +
+           "\r",
            [ [ 'Content-Type', 'text/plain; charset=utf-8' ],
              [ 'Subject', 'This is a test' ]
            ]

@@ -8,7 +8,7 @@ module RIMS
   module RFC822
     module Parse
       def split_message(msg_txt)
-        header_txt, body_txt = msg_txt.lstrip.split(/\r?\n\r?\n/, 2)
+        header_txt, body_txt = msg_txt.lstrip.split(/\R\R/, 2)
         if ($&) then
           header_txt << $&
         else
@@ -22,13 +22,12 @@ module RIMS
 
       def parse_header(header_txt)
         field_pair_list = header_txt.scan(%r{
-          ^
           ((?#name) \S+? )
           \s* : \s*
           (
              (?#value)
-             .*? (?: \n|\z)
-             (?: ^\s .*? (?: \n|\z) )*
+             .*? (?: \R|\z)
+             (?: \s .*? (?: \R|\z) )*
           )
         }x)
 
