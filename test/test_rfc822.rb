@@ -694,8 +694,13 @@ baz
            "A =?UTF-8?B?4pGg?= B", 'iso-2022-jp', charset_aliases: no_aliases, charset_convert_options: { undef: :replace }
          ])
     def test_decode_mime_encoded_words(data)
-      expected_text, encoded_string, *optional = data
-      text = RIMS::RFC822::CharsetText.decode_mime_encoded_words(encoded_string.b.freeze, *optional)
+      expected_text, encoded_string, *opt_args = data
+      if (opt_args.last.is_a? Hash) then
+        opt_kw_args = opt_args.pop
+      else
+        opt_kw_args = {}
+      end
+      text = RIMS::RFC822::CharsetText.decode_mime_encoded_words(encoded_string.b.freeze, *opt_args, **opt_kw_args)
       assert_equal(expected_text.encoding, text.encoding)
       assert_equal(expected_text, text)
     end
@@ -893,13 +898,13 @@ baz
     end
 
     def test_content_disposition
-      setup_message('Content-Disposition' => 'inline')
+      setup_message({ 'Content-Disposition' => 'inline' })
       assert_equal('inline', @msg.content_disposition)
       assert_equal('INLINE', @msg.content_disposition_upcase)
     end
 
     def test_content_disposition_parameter
-      setup_message('Content-Disposition' => 'attachment; filename=genome.jpeg; Modification-Date="Wed, 12 Feb 1997 16:29:51 -0500"')
+      setup_message({ 'Content-Disposition' => 'attachment; filename=genome.jpeg; Modification-Date="Wed, 12 Feb 1997 16:29:51 -0500"' })
       assert_equal('genome.jpeg', @msg.content_disposition_parameter('filename'))
       assert_equal('Wed, 12 Feb 1997 16:29:51 -0500', @msg.content_disposition_parameter('modification-date'))
       assert_nil(@msg.content_disposition_parameter('size'))
@@ -918,7 +923,7 @@ baz
     end
 
     def test_content_language
-      setup_message('Content-Language' => 'mi, En')
+      setup_message({ 'Content-Language' => 'mi, En' })
       assert_equal(%w[ mi En ], @msg.content_language)
       assert_equal(%w[ MI EN ], @msg.content_language_upcase)
     end
@@ -1081,7 +1086,7 @@ Content-Type: application/octet-stream
     end
 
     def test_date
-      setup_message('Date' => 'Fri, 8 Nov 2013 03:47:17 +0000')
+      setup_message({ 'Date' => 'Fri, 8 Nov 2013 03:47:17 +0000' })
       assert_equal(Time.utc(2013, 11, 8, 3, 47, 17), @msg.date)
     end
 
@@ -1091,17 +1096,18 @@ Content-Type: application/octet-stream
     end
 
     def test_date_bad_format
-      setup_message('Date' => 'no_date')
+      setup_message({ 'Date' => 'no_date' })
       assert_equal(Time.at(0), @msg.date)
     end
 
     def test_mail_address_header_field
-      setup_message('From' => 'Foo <foo@mail.example.com>',
-                    'Sender' => 'Bar <bar@mail.example.com>',
-                    'Reply-To' => 'Baz <baz@mail.example.com>',
-                    'To' => 'Alice <alice@mail.example.com>',
-                    'Cc' => 'Bob <bob@mail.example.com>',
-                    'Bcc' => 'Kate <kate@mail.example.com>')
+      setup_message({ 'From'     => 'Foo <foo@mail.example.com>',
+                      'Sender'   => 'Bar <bar@mail.example.com>',
+                      'Reply-To' => 'Baz <baz@mail.example.com>',
+                      'To'       => 'Alice <alice@mail.example.com>',
+                      'Cc'       => 'Bob <bob@mail.example.com>',
+                      'Bcc'      => 'Kate <kate@mail.example.com>'
+                    })
 
       assert_equal([ [ 'Foo', nil, 'foo', 'mail.example.com' ] ], @msg.from.map(&:to_a))
       assert_equal([ [ 'Bar', nil, 'bar', 'mail.example.com' ] ], @msg.sender.map(&:to_a))
@@ -1128,7 +1134,7 @@ Content-Type: application/octet-stream
     end
 
     def test_mail_address_header_field_bad_format
-      setup_message('From' => 'no_mail_address')
+      setup_message({ 'From' => 'no_mail_address' })
       assert_equal([], @msg.from)
     end
 
