@@ -403,7 +403,7 @@ module RIMS
         'Q' => 'QUOTED-PRINTABLE'
       }.freeze
 
-      def decode_mime_encoded_words(encoded_string, decode_charset=nil, charset_aliases: DEFAULT_CHARSET_ALIASES, charset_convert_options: nil)
+      def decode_mime_encoded_words(encoded_string, decode_charset=nil, charset_aliases: DEFAULT_CHARSET_ALIASES, charset_convert_options: {})
         src = encoded_string
         dst = ''.dup
 
@@ -433,7 +433,7 @@ module RIMS
 
           unless (foreword.empty?) then
             if (Encoding.compatible? dst, foreword) then
-              foreword.encode!(dst.encoding, charset_convert_options)
+              foreword.encode!(dst.encoding, **charset_convert_options)
             end
             dst << foreword
           end
@@ -448,16 +448,16 @@ module RIMS
             if (decode_charset_encoding) then
               if (decoded_text.encoding != decode_charset_encoding) then
                 # `decoded_text' is frozen
-                decoded_text = decoded_text.encode(decode_charset_encoding, charset_convert_options)
+                decoded_text = decoded_text.encode(decode_charset_encoding, **charset_convert_options)
               end
             end
 
             unless (Encoding.compatible? dst, decoded_text) then
               if (dst.ascii_only?) then
-                dst.encode!(decoded_text.encoding, charset_convert_options)
+                dst.encode!(decoded_text.encoding, **charset_convert_options)
               else
                 # `decoded_text' is frozen
-                decoded_text = decoded_text.encode(dst.encoding, charset_convert_options)
+                decoded_text = decoded_text.encode(dst.encoding, **charset_convert_options)
               end
             end
 
@@ -467,7 +467,7 @@ module RIMS
 
         unless (src.empty?) then
           unless (Encoding.compatible? dst, src) then
-            src = src.encode(dst.encoding, charset_convert_options) # `src' may be frozen
+            src = src.encode(dst.encoding, **charset_convert_options) # `src' may be frozen
           end
           dst << src
         end
@@ -847,7 +847,7 @@ module RIMS
       end
       private :make_charset_key
 
-      def mime_decoded_header(name, decode_charset=nil, charset_convert_options: nil)
+      def mime_decoded_header(name, decode_charset=nil, charset_convert_options: {})
         cache_key = [
           name.downcase.freeze,
           (decode_charset) ? make_charset_key(decode_charset) : :default
@@ -859,7 +859,7 @@ module RIMS
                                                                                         charset_convert_options: charset_convert_options)
       end
 
-      def mime_decoded_header_field_value_list(name, decode_charset=nil, charset_convert_options: nil)
+      def mime_decoded_header_field_value_list(name, decode_charset=nil, charset_convert_options: {})
         cache_key = [
           name.downcase.freeze,
           (decode_charset) ? make_charset_key(decode_charset) : :default
@@ -873,7 +873,7 @@ module RIMS
         }.freeze
       end
 
-      def mime_decoded_header_text(decode_charset=nil, charset_convert_options: nil)
+      def mime_decoded_header_text(decode_charset=nil, charset_convert_options: {})
         cache_key = (decode_charset) ? make_charset_key(decode_charset) : :default
         @mime_decoded_header_text_cache ||= {}
         @mime_decoded_header_text_cache[cache_key] ||= CharsetText.decode_mime_encoded_words(header.raw_source,
