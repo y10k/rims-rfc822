@@ -405,6 +405,7 @@ module RIMS
       def decode_mime_encoded_words(encoded_string, decode_charset=nil, charset_aliases: DEFAULT_CHARSET_ALIASES, charset_convert_options: {})
         src = encoded_string
         dst = ''.dup
+        charset_convert_options ||= {} # for backward compatibility
 
         if (decode_charset) then
           if (decode_charset.is_a? Encoding) then
